@@ -1,0 +1,23 @@
+<html>
+<head>
+    <title>Test</title>
+</head>
+<body>
+<label for="input">Test</label><input id="input" name="test" type="text"/>
+<script type="text/javascript">
+    const httpRequest = new XMLHttpRequest();
+    httpRequest.onreadystatechange = function () {
+        if (httpRequest.readyState === XMLHttpRequest.DONE) {
+            if (httpRequest.status === 200) {
+                document.body.innerHTML = '';
+            } else {
+                throw new Error(`HTTP error: ${httpRequest.status}`);
+            }
+        }
+    };
+    httpRequest.open('GET', 'https://api.staging.carbonate.dev/internal/test_wait?q=' + Math.random());
+    httpRequest.send();
+</script>
+</body>
+
+</html>

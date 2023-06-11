@@ -1,0 +1,19 @@
+<html>
+<head>
+    <title>Test</title>
+</head>
+<body>
+Loading...
+<script type="text/javascript">
+    fetch('https://api.staging.carbonate.dev/internal/test_wait?q=' + Math.random())
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error(`HTTP error: ${response.status}`);
+            }
+
+            document.body.innerHTML = '<label for="input">Test</label><input id="input" name="test" type="text" />'
+        });
+</script>
+</body>
+
+</html>

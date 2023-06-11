@@ -1,0 +1,20 @@
+<html>
+<head>
+    <title>Test</title>
+</head>
+<body>
+<script type="text/javascript">
+    for (var i = 1; i < 10; i++) {
+        console.log(2500 * i);
+        setTimeout(function(i) {
+            document.body.innerHTML = '<h1>' + i + '</h1>';
+        }.bind(null, i), 250 * i);
+    }
+
+    setTimeout(() => {
+        document.body.innerHTML = '<label for="input">Test</label><input id="input" name="test" type="text" />';
+    }, 250 * i);
+</script>
+</body>
+
+</html>
