@@ -1,0 +1,35 @@
+<html>
+    <head>
+        <title>Test</title>
+    </head>
+    <body>
+        <input type="button" id="button" />
+        <input type="checkbox" value="1" id="checkbox" />
+        <input type="color" id="color" />
+        <input type="date" id="date" />
+        <input type="datetime-local" id="datetime-local" />
+        <input type="email" id="email" />
+        <input type="month" id="month" />
+        <input type="number" id="number" />
+        <input type="password" id="password" />
+        <input type="radio" value="1" id="radio" />
+        <input type="range" id="range" />
+        <input type="search" id="search" />
+        <input type="submit" id="submit" />
+        <input type="tel" id="tel" />
+        <input type="text" id="text" />
+        <input type="time" id="time" />
+        <input type="url" id="url" />
+        <input type="week" id="week" />
+        <textarea id="textarea"></textarea>
+
+        <script>
+            window.hasChanged = {};
+            document.querySelectorAll('input, textarea').forEach(function (element) {
+                element.addEventListener('change', function () {
+                    window.hasChanged[element.id] = true;
+                });
+            });
+        </script>
+    </body>
+</html>

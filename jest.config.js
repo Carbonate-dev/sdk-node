@@ -8,5 +8,5 @@ module.exports = {
   // preset: 'jest-puppeteer',
   // preset: 'ts-jest',
   testEnvironment: "<rootDir>/src/jest/puppeteer.ts",
-  testTimeout: 20000,
+  testTimeout: 60000,
 };

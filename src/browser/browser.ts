@@ -5,8 +5,6 @@ export interface Browser {
 
     close(): Promise<void>;
 
-    // getScreenshot(): Promise<string>;
-
     findByXpath(xpath: string): Promise<any[]>;
 
     findById(id: string): Promise<any[]>;

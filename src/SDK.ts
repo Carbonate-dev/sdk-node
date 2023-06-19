@@ -7,26 +7,29 @@ import * as fs from "fs";
 import {WriteStream} from "fs";
 import Logger from "./logger/logger";
 import {NullLogger} from "./logger/null_logger";
+import {action} from "webdriverio/build/commands/browser/action";
 
 export class SDK {
     browser: Browser;
     client: Api;
+    testPrefix: string | null = null;
     testName: string | null = null;
     cacheDir: string | null;
     logger: Logger;
     networkWhitelist: string[] = [];
+    instructionCache: { [key: string]: any } = {};
 
     constructor(
         browser: Browser,
-        cache_dir: string | null = null,
-        api_user_id: string | null = null,
-        api_key: string | null = null,
+        cacheDir: string | null = null,
+        apiUserId: string | null = null,
+        apiKey: string | null = null,
         logging: WriteStream | false | null | string | Logger = null,
         client: Api | null = null,
     ) {
         this.browser = browser;
-        this.client = client || new Api(api_user_id, api_key);
-        this.cacheDir = cache_dir || process.env.CARBONATE_CACHE_DIR || null;
+        this.client = client || new Api(apiUserId, apiKey);
+        this.cacheDir = cacheDir || process.env.CARBONATE_CACHE_DIR || null;
 
         // Path to file or IO object
         if (logging === false) {
@@ -43,25 +46,29 @@ export class SDK {
 
     getTestName(): string {
         if (!this.testName) {
-            throw new Error("You must call start_test() or use the custom jest environment");
+            throw new Error("You must call startTest() or use the custom jest environment");
+        }
+
+        if (this.testPrefix) {
+            return this.testPrefix + ': ' + this.testName;
         }
 
         return this.testName;
     }
 
-    async waitForLoad(skip_func: () => Promise<boolean>): Promise<void> {
+    async waitForLoad(skipFunc: () => Promise<boolean>): Promise<void> {
         let i = 0;
 
-        while (await this.browser.evaluateScript('window.__dom_updating') || await this.browser.evaluateScript('window.__active_xhr')) {
-            if (await skip_func()) {
+        while (await this.browser.evaluateScript('window.carbonate_dom_updating') || await this.browser.evaluateScript('window.carbonate_active_xhr')) {
+            if (await skipFunc()) {
                 this.logger.info("Found cached element, skipping DOM wait");
                 break;
             }
 
-            if (await this.browser.evaluateScript('window.__dom_updating')) {
+            if (await this.browser.evaluateScript('window.carbonate_dom_updating')) {
                 this.logger.info("Waiting for DOM update to finish");
             } else {
-                this.logger.info("Waiting for active XHR to finish");
+                this.logger.info("Waiting for active Network to finish");
             }
 
             if (i > 20) {
@@ -97,9 +104,6 @@ export class SDK {
     async extractActions(instruction: string): Promise<any[]> {
         const actions = await this.client.extractActions(this.getTestName(), instruction, await this.browser.getHtml());
 
-        console.log('actions 2')
-        console.log(actions)
-
         if (actions.length > 0) {
             this.logger.info("Successfully extracted actions", {actions: actions});
             this.cacheInstruction(actions, instruction);
@@ -112,23 +116,39 @@ export class SDK {
 
     cacheInstruction(result: any, instruction: string): void {
         if (this.cacheDir != null) {
-            if (!this.testName) {
-                throw new Error("Test name not set");
-            }
-
-            // Create the cache directory if it doesn't exist
-            if (!fs.existsSync(this.cacheDir)) {
-                fs.mkdirSync(this.cacheDir, {recursive: true});
-            }
-
-            // Create the test name directory if it doesn't exist
-            if (!fs.existsSync(this.cacheDir + '/' + slugify(this.testName))) {
-                fs.mkdirSync(this.cacheDir + '/' + slugify(this.testName), {recursive: true});
-            }
-
-            // Write the actions to a file
-            fs.writeFileSync(this.getCachePath(instruction) as string, JSON.stringify(result));
+            this.instructionCache[instruction] = result;
         }
+    }
+
+    writeCache(): void {
+        if (this.cacheDir == null) {
+            throw new Error("Cannot call writeCache without setting cacheDir");
+        }
+
+        if (!this.testName) {
+            throw new Error("Test name not set, please call startTest first");
+        }
+
+        if (Object.keys(this.instructionCache).length === 0) {
+            return;
+        }
+
+        // Create the cache directory if it doesn't exist
+        if (!fs.existsSync(this.cacheDir)) {
+            fs.mkdirSync(this.cacheDir, {recursive: true});
+        }
+
+        // Create the test name directory if it doesn't exist
+        if (!fs.existsSync(this.cacheDir + '/' + slugify(this.testName))) {
+            fs.mkdirSync(this.cacheDir + '/' + slugify(this.testName), {recursive: true});
+        }
+
+        for (let instruction in this.instructionCache) {
+            // Write the actions to a file
+            fs.writeFileSync(this.getCachePath(instruction) as string, JSON.stringify(this.instructionCache[instruction]));
+        }
+
+        this.instructionCache = {};
     }
 
     cachedAssertions(instruction: string): any[] {
@@ -161,8 +181,8 @@ export class SDK {
         this.logger.info("Querying action", {test_name: this.getTestName(), instruction: instruction});
         let actions = this.cachedActions(instruction);
 
-        const is_action_ready = async (action: any) => (await this.browser.findByXpath(action['xpath'])).length > 0;
-        await this.waitForLoad(async () => actions.length > 0 && (await Promise.all(actions.map(is_action_ready))).every(_ => _));
+        const isActionReady = async (action: any) => (await this.browser.findByXpath(action['xpath'])).length > 0;
+        await this.waitForLoad(async () => actions.length > 0 && (await Promise.all(actions.map(isActionReady))).every(_ => _));
 
         if (actions.length === 0) {
             this.logger.notice("No actions found, extracting from page");
@@ -173,7 +193,7 @@ export class SDK {
     }
 
     async performActions(actions: any[]): Promise<any[]> {
-        const previous_actions = [];
+        const previousActions = [];
         for (const action of actions) {
             this.logger.info("Performing action", {action: action});
             const elements = await this.browser.findByXpath(action['xpath']);
@@ -187,14 +207,14 @@ export class SDK {
                     "More than one element found for xpath",
                     {num: elements.length, xpath: action['xpath']}
                 );
-                return previous_actions;
+                return previousActions;
             }
 
             await this.browser.performAction(action, elements);
-            previous_actions.push(action);
+            previousActions.push(action);
         }
 
-        return previous_actions;
+        return previousActions;
     }
 
     async assertion(instruction: string): Promise<boolean> {
@@ -202,9 +222,9 @@ export class SDK {
 
         let assertions = this.cachedAssertions(instruction);
 
-        const isAssertionReady = (assertion: any): boolean => {
+        const isAssertionReady = async (assertion: any): Promise<boolean> => {
             try {
-                this.performAssertion(assertion);
+                await this.performAssertion(assertion);
                 return true;
             } catch (e) {
                 return false;
@@ -221,9 +241,9 @@ export class SDK {
         return this.performAssertions(assertions);
     }
 
-    performAssertions(assertions: any[]): boolean {
+    async performAssertions(assertions: any[]): Promise<boolean> {
         for (const assertion of assertions) {
-            const result = this.performAssertion(assertion);
+            const result = await this.performAssertion(assertion);
 
             if (!result) {
                 return false;
@@ -236,7 +256,7 @@ export class SDK {
     async performAssertion(assertion: any): Promise<boolean> {
         this.logger.info("Performing assertion", {assertion: assertion['assertion']});
 
-        return await this.browser.evaluateScript('' + assertion['assertion']);
+        return await this.browser.evaluateScript('window.carbonate_reset_assertion_result(); ' + assertion['assertion'] + '; window.carbonate_assertion_result;');
     }
 
     cachedLookup(instruction: string): any {
@@ -284,16 +304,23 @@ export class SDK {
         return elements[0];
     }
 
-    startTest(test_name: string): void {
+    startTest(testPrefix: string, testName: string): void {
+        if (Object.keys(this.instructionCache).length > 0) {
+            throw Error("Instruction cache not empty, did you forget to call endTest()?");
+        }
+
         if (this.logger instanceof TestLogger) {
             this.logger.clearLogs();
         }
 
-        this.testName = test_name;
+        this.testPrefix = testPrefix;
+        this.testName = testName;
     }
 
     async endTest(): Promise<void> {
-        await this.browser.close();
+        if (this.cacheDir != null) {
+            this.writeCache();
+        }
     }
 
     async load(url: string): Promise<void> {
@@ -306,20 +333,25 @@ export class SDK {
         await this.browser.close();
     }
 
-    // async getScreenshot(): Promise<string> {
-    //     this.logger.info("Taking screenshot");
-    //     return await this.browser.getScreenshot();
-    // }
-
     whitelistNetwork(url: string) {
         this.networkWhitelist.push(url);
     }
 
-    handleTestFailure(): string | null {
+    handleFailedTest(): string | null {
+        this.instructionCache = {};
+
         if (this.logger instanceof TestLogger) {
             return this.logger.getLogs()
         }
 
         return null;
+    }
+
+    getLogger(): Logger {
+        return this.logger;
+    }
+
+    getBrowser(): Browser {
+        return this.browser;
     }
 }

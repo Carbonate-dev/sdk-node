@@ -2,26 +2,19 @@ import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } fr
 import {SDK} from "../../../src/SDK";
 import Api from "../../../src/api/api"
 import Puppeteer from "../../../src/browser/puppeteer"
-import mocked = jest.mocked;
-
 jest.mock("../../../src/api/api");
 
-let browser: Puppeteer;
-let sdk: SDK;
-let api: Api;
-
-const MockedClient = mocked(Api, {shallow: true});
-
-beforeEach(() => {
-    MockedClient.mockClear();
-    api = new Api();
-    browser = new Puppeteer(page);
-    sdk = new SDK(browser, null, null, null, null, api);
+describe("NotFoundTest", () => {
+    let api = new Api();
+    let browser = new Puppeteer(page);
+    let sdk = new SDK(browser, null, null, null, null, api);
 
     setSDK(sdk);
-});
 
-describe("NotFoundTest", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
     test("It should error if xpath is not found for an action", async () => {
         api.extractActions = jest.fn().mockResolvedValue([
             { action: "click", xpath: "//select//option[text()='Birthday']" },
@@ -32,6 +25,8 @@ describe("NotFoundTest", () => {
         await expect(
             sdk.action("chose Birthday as the event type")
         ).rejects.toThrowError("Could not find element for xpath: //select//option[text()='Birthday']");
+
+        expect(api.extractActions).toBeCalledTimes(1);
     });
 
     test("It should error if xpath is not found for a lookup", async () => {
@@ -44,5 +39,7 @@ describe("NotFoundTest", () => {
         await expect(
             sdk.lookup("the event type dropdown")
         ).rejects.toThrowError("Could not find element for xpath: //select//option[text()='Birthday']");
+
+        expect(api.extractLookup).toBeCalledTimes(1);
     });
 });

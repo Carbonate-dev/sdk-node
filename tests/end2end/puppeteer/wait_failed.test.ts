@@ -5,7 +5,7 @@ import Puppeteer from "../../../src/browser/puppeteer"
 import {TestLogger} from "../../../src/logger/test_logger";
 jest.mock("../../../src/api/api");
 
-describe("WaitTest", () => {
+describe("WaitFailedTest", () => {
     let api = new Api();
     let browser = new Puppeteer(page);
     let sdk = new SDK(browser, null, null, null, null, api);
@@ -16,12 +16,12 @@ describe("WaitTest", () => {
         jest.clearAllMocks();
     });
 
-    test("It should wait for XHR before performing actions", async () => {
+    test("It should handle failed XHR when performing actions", async () => {
         api.extractActions = jest.fn().mockResolvedValue([
             {action: "type", xpath: '//label[@for="input"]', text: 'teststr'},
         ]);
 
-        await sdk.load("file:///" + __dirname + "/../../fixtures/wait_xhr.html");
+        await sdk.load("file:///" + __dirname + "/../../fixtures/wait_xhr_failed.html");
 
         await sdk.action('type "teststr" into the input');
 
@@ -29,32 +29,24 @@ describe("WaitTest", () => {
             await sdk.getBrowser().evaluateScript("document.querySelector('input').value == 'teststr'")
         ).toBe(true);
 
-        expect(
-            await (sdk.getLogger() as TestLogger).getLogs()
-        ).toContain('Waiting for active Network to finish');
-
         expect(api.extractActions).toBeCalledTimes(1);
     });
 
-    test("It should wait for XHR before performing assertions", async () => {
+    test("It should handle failed XHR when performing assertions", async () => {
         api.extractAssertions = jest.fn().mockResolvedValue([
             {assertion: "carbonate_assert(document.querySelector('input').value == '');"},
         ]);
 
-        await sdk.load("file:///" + __dirname + "/../../fixtures/wait_xhr.html");
+        await sdk.load("file:///" + __dirname + "/../../fixtures/wait_xhr_failed.html");
 
         expect(
             await sdk.assertion('the input should be empty')
         ).toBe(true);
 
-        expect(
-            await (sdk.getLogger() as TestLogger).getLogs()
-        ).toContain('Waiting for active Network to finish');
-
         expect(api.extractAssertions).toBeCalledTimes(1);
     });
 
-    test("It should wait for Fetch before performing actions", async () => {
+    test("It should handle failed Fetch when performing actions", async () => {
         api.extractActions = jest.fn().mockResolvedValue([
             {action: "type", xpath: '//label[@for="input"]', text: 'teststr'},
         ]);
@@ -62,7 +54,7 @@ describe("WaitTest", () => {
             {assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');"},
         ]);
 
-        await sdk.load("file:///" + __dirname + "/../../fixtures/wait_fetch.html");
+        await sdk.load("file:///" + __dirname + "/../../fixtures/wait_fetch_failed.html");
 
         await sdk.action('type "teststr" into the input')
 
@@ -70,27 +62,19 @@ describe("WaitTest", () => {
             await sdk.getBrowser().evaluateScript("document.querySelector('input').value == 'teststr'")
         ).toBe(true);
 
-        expect(
-            await (sdk.getLogger() as TestLogger).getLogs()
-        ).toContain('Waiting for active Network to finish');
-
         expect(api.extractActions).toBeCalledTimes(1);
     });
 
-    test("It should wait for Fetch before performing assertionns", async () => {
+    test("It should handle failed Fetch when performing assertionns", async () => {
         api.extractAssertions = jest.fn().mockResolvedValue([
             {assertion: "carbonate_assert(document.querySelector('input').value == '');"},
         ]);
 
-        await sdk.load("file:///" + __dirname + "/../../fixtures/wait_fetch.html");
+        await sdk.load("file:///" + __dirname + "/../../fixtures/wait_fetch_failed.html");
 
         expect(
             await sdk.assertion('the input should be empty')
         ).toBe(true);
-
-        expect(
-            await (sdk.getLogger() as TestLogger).getLogs()
-        ).toContain('Waiting for active Network to finish');
 
         expect(api.extractAssertions).toBeCalledTimes(1);
     });

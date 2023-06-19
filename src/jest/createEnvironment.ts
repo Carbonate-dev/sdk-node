@@ -52,7 +52,7 @@ export default function createEnvironment({ baseEnvironment } : { baseEnvironmen
                 if (!this.sdk) {
                     console.error("No SDK set, please call setSDK(sdk) in your test file");
                 } else {
-                    this.sdk.startTest(this.global.testNames.join(": "));
+                    this.sdk.startTest(this.global.testNames[0], this.global.testNames.slice(1).join(": "));
                 }
             }
 
@@ -62,7 +62,7 @@ export default function createEnvironment({ baseEnvironment } : { baseEnvironmen
                 }
 
                 if (["test_failure", "test_fn_failure"].includes(event.name) && this.sdk) {
-                    let logs = this.sdk.handleTestFailure();
+                    let logs = this.sdk.handleFailedTest();
 
                     if (logs && state.currentlyRunningTest) {
                         let injectedLogs = false;

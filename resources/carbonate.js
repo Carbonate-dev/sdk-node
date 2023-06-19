@@ -1,6 +1,16 @@
 (function() {
-    window.__dom_updating = true;
-    window.__active_xhr = false;
+    window.carbonate_dom_updating = true;
+    window.carbonate_active_xhr = false;
+    window.carbonate_assertion_result = false;
+    const activeXhr = [];
+
+    function log(message) {
+        console.log('[' + new Date().toISOString().slice(11) + '] ' + message);
+    }
+
+    function warn(message) {
+        console.warn('[' + new Date().toISOString().slice(11) + '] ' + message);
+    }
 
     function debounce(func, delay) {
         let debounceTimer;
@@ -12,15 +22,56 @@
         };
     }
 
-    const markDomNotReady = () => { console.log('DOM not ready'); window.__dom_updating = true; };
-    const markXhrNotReady = () => { console.log('XHRs in progress'); window.__active_xhr = true; };
+    const markDomNotReady = () => {
+        log('DOM not ready');
+        window.carbonate_dom_updating = true;
+    };
+    const markXhrNotReady = () => {
+        log('XHRs in progress');
+        window.carbonate_active_xhr = true;
+    };
 
-    const markDomReady = debounce(() => { console.log('DOM ready'); window.__dom_updating = false; }, 500);
-    const markXhrReady = debounce(() => { console.log('XHRs done'); window.__active_xhr = false; }, 500);
+    const markDomReady = debounce(() => {
+        log('DOM ready');
+        window.carbonate_dom_updating = false;
+    }, 500);
+    const markXhrReady = debounce(() => {
+        if (activeXhr.length === 0) {
+            log('XHRs done');
+            window.carbonate_active_xhr = false;
+        }
+    }, 500);
+
+    const removeFromXhrQueue = (url) => {
+        let index = activeXhr.indexOf(url);
+
+        if (index > -1) {
+            activeXhr.splice(index, 1);
+        }
+        else {
+            warn('XHR not found in queue', url);
+        }
+
+        markXhrReady();
+    }
+
+    const addToXhrQueue = (url) => {
+        if (urlWhitelist.find(regex => regex.test(url))) {
+            log('Skipping whitelisted URL', url);
+        }
+        else {
+            activeXhr.push(url);
+        }
+
+        markXhrNotReady();
+    }
 
     function spyOnDom() {
+        log('Requesting idle callback');
         // Initial render
-        requestIdleCallback(markDomReady);
+        requestIdleCallback(markDomReady, {
+            timeout: 100,
+        });
 
         // Observe any changes to the DOM
         const observer = new MutationObserver(() => {
@@ -34,14 +85,36 @@
         window.addEventListener('DOMContentLoaded', spyOnDom);
     }
     else {
+        log('DOM already ready');
         spyOnDom();
     }
 
     let urlWhitelist = [];
 
     // Allow XHR/Fetch whitelisting
-    window.__set_xhr_whitelist = (whitelist) => {
+    window.carbonate_set_xhr_whitelist = (whitelist) => {
         urlWhitelist = whitelist.map(url => new RegExp(globToRegex(url)));
+
+        for (let url of urlWhitelist) {
+            let matching = activeXhr.filter(activeUrl => url.test(activeUrl));
+            if (matching.length > 0) {
+                warn('Whitelisted URL already in queue', url);
+
+                for (let match of matching) {
+                    removeFromXhrQueue(match);
+                }
+            }
+        }
+    }
+
+    window.carbonate_reset_assertion_result = () => {
+        window.carbonate_assertion_result = true;
+    }
+
+    window.carbonate_assert = (assertion) => {
+        if (assertion === false) {
+            window.carbonate_assertion_result = false;
+        }
     }
 
     // Wrap fetches and wait until they're complete
@@ -50,14 +123,13 @@
         window.fetch = (function(fetch) {
             return function (...args) {
                 if (urlWhitelist.find(regex => regex.test(args[0]))) {
-                    console.log('Whitelisted fetch', args[0]);
+                    log('Whitelisted fetch', args[0]);
                     return fetch(...args);
                 }
 
-                markXhrNotReady();
+                addToXhrQueue(args[0]);
                 return fetch(...args)
-                    .then(res => { markXhrReady(); return res; })
-                    .catch(res => { markXhrReady(); return res; });
+                    .finally(res => { removeFromXhrQueue(args[0]); return res; })
             };
         })(window.fetch);
     }
@@ -74,34 +146,23 @@
         }
     }
 
-    const activeXhr = [];
     window.XMLHttpRequest.prototype.open = (function(open) {
         return function(...args) {
             const intercept = () => {
                 switch (this.readyState) {
                     case 1:
-                        activeXhr.push(this);
-                        markXhrNotReady();
+                        addToXhrQueue(args[1]);
                         break;
 
                     case 4:
-                        const i = activeXhr.indexOf(this);
-
-                        if (i > -1) {
-                            activeXhr.splice(i, 1);
-                        }
-
-                        if (activeXhr.length === 0) {
-                            markXhrReady();
-                        }
-
+                        removeFromXhrQueue(args[1]);
                         break;
                 }
             }
 
 
             if (urlWhitelist.find(regex => regex.test(args[1]))) {
-                console.log('Whitelisted XHR', args[1]);
+                log('Whitelisted XHR', args[1]);
             }
             else {
                 if (this.addEventListener) {
@@ -117,7 +178,7 @@
 
     // Let Carbonate query for hidden elements
 
-    window.__getAllHiddenElements = function (el) {
+    window.carbonate_getAllHiddenElements = function (el) {
         const all = el.getElementsByTagName("*");
         let hidden = [];
 
@@ -146,6 +207,10 @@
                 element.tagName.toLowerCase() +
                 (sameTagSiblings.length > 1 ? `[${idx + 1}]` : '')
         }
+    }
+
+    window.carbonate_getElementByXpath = function(path) {
+        return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
     }
 
     // The following was adapted from https://github.com/brianloveswords/urlglob

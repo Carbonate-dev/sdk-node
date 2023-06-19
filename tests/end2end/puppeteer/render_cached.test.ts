@@ -2,13 +2,14 @@ import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } fr
 import {SDK} from "../../../src/SDK";
 import Api from "../../../src/api/api"
 import Puppeteer from "../../../src/browser/puppeteer"
+import * as path from "path";
 import {TestLogger} from "../../../src/logger/test_logger";
 jest.mock("../../../src/api/api");
 
 describe("RenderTest", () => {
     let api = new Api();
     let browser = new Puppeteer(page);
-    let sdk = new SDK(browser, null, null, null, null, api);
+    let sdk = new SDK(browser, __dirname + '/' + path.parse(__filename).name, null, null, null, api);
 
     setSDK(sdk);
 
@@ -20,6 +21,10 @@ describe("RenderTest", () => {
         api.extractActions = jest.fn().mockResolvedValue([
             { action: "type", xpath: '//label[@for="input"]', text: 'teststr' },
         ]);
+        api.extractAssertions = jest.fn().mockResolvedValue([
+            { assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');" },
+        ]);
+
         await sdk.load("file:///" + __dirname + "/../../fixtures/render.html");
 
         await sdk.action('type "teststr" into the input')
@@ -32,7 +37,8 @@ describe("RenderTest", () => {
             await (sdk.getLogger() as TestLogger).getLogs()
         ).toContain('Waiting for DOM update to finish');
 
-        expect(api.extractActions).toBeCalledTimes(1);
+        expect(api.extractActions).toBeCalledTimes(0);
+        expect(api.extractAssertions).toBeCalledTimes(0);
     });
 
     test("It should wait for renders to finish before performing assertions", async () => {
@@ -50,6 +56,6 @@ describe("RenderTest", () => {
             await (sdk.getLogger() as TestLogger).getLogs()
         ).toContain('Waiting for DOM update to finish');
 
-        expect(api.extractAssertions).toBeCalledTimes(1);
+        expect(api.extractAssertions).toBeCalledTimes(0);
     });
 });

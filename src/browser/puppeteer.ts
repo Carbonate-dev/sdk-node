@@ -19,18 +19,17 @@ export default class Puppeteer implements Browser {
     }
 
     async load(url: string, whitelist: string[]): Promise<void> {
-        await this.browser.evaluateOnNewDocument(this.injectJs);
-        await this.browser.evaluateOnNewDocument('window.__set_xhr_whitelist(' + JSON.stringify(whitelist) + ')');
+        if (await this.evaluateScript('typeof window.carbonate_dom_updating === "undefined"')) {
+            await this.browser.evaluateOnNewDocument(this.injectJs);
+        }
+
         await this.browser.goto(url);
+        await this.evaluateScript('window.carbonate_set_xhr_whitelist(' + JSON.stringify(whitelist) + ')');
     }
 
     async close(): Promise<void> {
-        // await this.browser.close();
+        await this.browser.close();
     }
-
-    // async getScreenshot(): Promise<string> {
-    //     return Promise.resolve(this.browser.screenshot().toString());
-    // }
 
     async findByXpath(xpath: string): Promise<ElementHandle<Node>[]> {
         return await this.browser.$x(xpath);
@@ -44,8 +43,7 @@ export default class Puppeteer implements Browser {
         try {
             return (await this.browser.evaluate(script, [])) as any;
         } catch (e) {
-            console.error(e);
-            throw new BrowserException('Could not evaluate script: ' + script);
+            throw new BrowserException('Could not evaluate script: ' + script + ' - ' + e);
         }
     }
 
@@ -70,6 +68,18 @@ export default class Puppeteer implements Browser {
                 await elements[0].getProperty('tagName')
             ).jsonValue()).toLowerCase();
 
+            const nonTypeable = ['date', 'datetime-local', 'month', 'time', 'week', 'color', 'range'];
+            let type = (await (await elements[0].getProperty('type')).jsonValue() as string);
+
+            if (tagName === 'input' && nonTypeable.includes(type.toLowerCase())) {
+                await this.browser.evaluate((el, text) => {
+                    (<HTMLInputElement>el).value = text;
+                    el.dispatchEvent(new Event('change'));
+                }, elements[0], action.text);
+
+                return;
+            }
+
             if (tagName === 'label') {
                 let id = await this.browser.evaluate(el => el.getAttribute('for'), elements[0]);
 
@@ -81,6 +91,8 @@ export default class Puppeteer implements Browser {
             }
 
             await elements[0].type(action.text);
+            this.evaluateScript('!!document.activeElement ? document.activeElement.blur() : 0');
+
         } else if (action.action === Action.KEY) {
             await elements[0].press(action.key);
         }

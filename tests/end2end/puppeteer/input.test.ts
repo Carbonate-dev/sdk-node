@@ -2,41 +2,95 @@ import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } fr
 import {SDK} from "../../../src/SDK";
 import Api from "../../../src/api/api"
 import Puppeteer from "../../../src/browser/puppeteer"
-import mocked = jest.mocked;
-
+import {json} from "stream/consumers";
 jest.mock("../../../src/api/api");
 
-let browser: Puppeteer;
-let sdk: SDK;
-let api: Api;
-
-const MockedClient = mocked(Api, {shallow: true});
-
-beforeEach(() => {
-    MockedClient.mockClear();
-    api = new Api();
-    browser = new Puppeteer(page);
-    sdk = new SDK(browser, null, null, null, null, api);
+describe("InputTest", () => {
+    let api = new Api();
+    let browser = new Puppeteer(page);
+    let sdk = new SDK(browser, null, null, null, null, api);
 
     setSDK(sdk);
-});
 
-describe("InputTest", () => {
-    test("It should fill in an input", async () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    const inputDataProvider = [
+        ['color', '//input[@id="color"]', '#ff0000'],
+        ['email', '//input[@id="email"]', 'test@example.org'],
+        ['number', '//input[@id="number"]', '12'],
+        ['password', '//input[@id="password"]', 'teststr'],
+        ['range', '//input[@id="range"]', '50'],
+        ['search', '//input[@id="search"]', 'teststr'],
+        ['tel', '//input[@id="tel"]', '01234567890'],
+        ['text', '//input[@id="text"]', 'teststr'],
+        ['url', '//input[@id="url"]', 'http://example.org'],
+        ['textarea', '//textarea[@id="textarea"]', "This\nis\na\ntest"],
+    ];
+
+    const dateDataProvider = [
+        ['date', '//input[@id="date"]', '2022-01-01'],
+        ['datetime-local', '//input[@id="datetime-local"]', '2022-01-01T00:00'],
+        ['month', '//input[@id="month"]', '2022-01'],
+        ['time', '//input[@id="time"]', '00:00:00'],
+        ['week', '//input[@id="week"]', '2022-W01'],
+    ];
+
+    const checkDataProvider = [
+        ['radio', '//input[@id="radio"]', '1'],
+        ['checkbox', '//input[@id="checkbox"]', '1'],
+    ];
+
+    test.each([...inputDataProvider, ...dateDataProvider])
+    ("It should fill in an input", async (name, xpath, value) => {
         api.extractActions = jest.fn().mockResolvedValue([
-            { action: "type", xpath: '//input[@id="input"]', text: 'teststr' },
+            { action: "type", xpath, text: value },
         ]);
         api.extractAssertions = jest.fn().mockResolvedValue([
-            { assertion: "document.querySelector('input').value == 'teststr'" },
+            { assertion: `carbonate_assert(document.querySelector('#${name}').value == ${JSON.stringify(value)});` },
         ]);
 
-        await sdk.load("file:///" + __dirname + "/../../fixtures/label.html");
+        await sdk.load("file:///" + __dirname + "/../../fixtures/input.html");
 
-        await sdk.action('type "teststr" into the input')
+        await sdk.action(`type "teststr" into the ${name} input`)
 
         expect(
-            await sdk.assertion('the input should have the contents "teststr"')
+            await sdk.assertion(`the ${name} input should have the contents ${JSON.stringify(value)}`)
         ).toBe(true);
+
+        expect(
+            await sdk.getBrowser().evaluateScript(`window.hasChanged["${name}"]`)
+        ).toBe(true);
+
+        expect(api.extractActions).toBeCalledTimes(1);
+        expect(api.extractAssertions).toBeCalledTimes(1);
+    });
+
+
+    test.each(checkDataProvider)
+    ("It should click the element", async (name, xpath, value) => {
+        api.extractActions = jest.fn().mockResolvedValue([
+            { action: "click", xpath },
+        ]);
+        api.extractAssertions = jest.fn().mockResolvedValue([
+            { assertion: `carbonate_assert(document.querySelector('#${name}').value == ${JSON.stringify(value)});` },
+        ]);
+
+        await sdk.load("file:///" + __dirname + "/../../fixtures/input.html");
+
+        await sdk.action(`click the ${name} element`)
+
+        expect(
+            await sdk.assertion(`the ${name} element should have the value "${value}"`)
+        ).toBe(true);
+
+        expect(
+            await sdk.getBrowser().evaluateScript(`window.hasChanged["${name}"]`)
+        ).toBe(true);
+
+        expect(api.extractActions).toBeCalledTimes(1);
+        expect(api.extractAssertions).toBeCalledTimes(1);
     });
 
     test("It should fill in an input when given a label", async () => {
@@ -44,7 +98,7 @@ describe("InputTest", () => {
             { action: "type", xpath: '//label[@for="input"]', text: 'teststr' },
         ]);
         api.extractAssertions = jest.fn().mockResolvedValue([
-            { assertion: "document.querySelector('input').value == 'teststr'" },
+            { assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');" },
         ]);
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/label.html");
@@ -54,5 +108,8 @@ describe("InputTest", () => {
         expect(
             await sdk.assertion('the input should have the contents "teststr"')
         ).toBe(true);
+
+        expect(api.extractActions).toBeCalledTimes(1);
+        expect(api.extractAssertions).toBeCalledTimes(1);
     });
 });

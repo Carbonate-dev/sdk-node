@@ -5,7 +5,6 @@
 <body>
 <script type="text/javascript">
     for (var i = 1; i < 10; i++) {
-        console.log(2500 * i);
         setTimeout(function(i) {
             document.body.innerHTML = '<h1>' + i + '</h1>';
         }.bind(null, i), 250 * i);
