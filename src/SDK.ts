@@ -195,7 +195,7 @@ export class SDK {
     async performActions(actions: any[]): Promise<any[]> {
         const previousActions = [];
         for (const action of actions) {
-            this.logger.info("Performing action", {action: action});
+            this.logger.notice("Performing action", {action: action});
             const elements = await this.browser.findByXpath(action['xpath']);
 
             if (elements.length === 0) {
@@ -254,7 +254,7 @@ export class SDK {
     }
 
     async performAssertion(assertion: any): Promise<boolean> {
-        this.logger.info("Performing assertion", {assertion: assertion['assertion']});
+        this.logger.notice("Performing assertion", {assertion: assertion['assertion']});
 
         return await this.browser.evaluateScript('window.carbonate_reset_assertion_result(); ' + assertion['assertion'] + '; window.carbonate_assertion_result;');
     }
