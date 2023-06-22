@@ -6,7 +6,6 @@ export class TestLogger implements Logger {
     private logs: Array<{ level: string; message: string; context: Record<string, any> }>;
 
     constructor(outputPath: fs.WriteStream | string | null = null) {
-        // super();
         if (typeof outputPath === 'string') {
             outputPath = fs.createWriteStream(outputPath);
         }

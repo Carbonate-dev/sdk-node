@@ -5,6 +5,7 @@ import Puppeteer from "../../../src/browser/puppeteer"
 import mocked = jest.mocked;
 import * as path from "path";
 import {TestLogger} from "../../../src/logger/test_logger";
+jest.mock("../../../src/api/api");
 
 describe("WaitTest", () => {
     let api = new Api();
