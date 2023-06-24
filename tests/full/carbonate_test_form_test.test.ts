@@ -12,8 +12,7 @@ setSDK(sdk);
 describe("CarbonateTestFormTest", () => {
     test("Birthday event type", async () => {
         await sdk.load(
-            // 'https://carbonate.dev/demo-form',
-            'https://testbot-website.vercel.app/demo-form'
+            'https://carbonate.dev/demo-form'
         );
 
         await sdk.action('chose Birthday as the event type')
