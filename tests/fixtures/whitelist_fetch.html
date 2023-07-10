@@ -5,7 +5,7 @@
 <body>
 <label for="input">Test</label><input id="input" name="test" type="text"/>
 <script type="text/javascript">
-    fetch('https://api.staging.carbonate.dev/internal/test_wait?q=' + Math.random())
+    fetch('https://api.carbonate.dev/internal/test_wait?q=' + Math.random())
         .then((response) => {
             if (!response.ok) {
                 throw new Error(`HTTP error: ${response.status}`);

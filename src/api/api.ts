@@ -12,7 +12,7 @@ export default class Api {
     ) {
         this.apiUserId = apiUserId || process.env.CARBONATE_USER_ID as string;
         this.apiKey = apiKey || process.env.CARBONATE_API_KEY as string;
-        this.apiUrl = apiUrl || 'https://api.staging.carbonate.dev/' as string
+        this.apiUrl = apiUrl || 'https://api.carbonate.dev/' as string
 
         if (!this.apiUserId) {
             throw new Error(

@@ -23,7 +23,7 @@ describe("WhitelistTest", () => {
             { assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');" },
         ]);
 
-        sdk.whitelistNetwork('https://api.staging.carbonate.dev/internal/test_wait*');
+        sdk.whitelistNetwork('https://api.carbonate.dev/internal/test_wait*');
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/whitelist_xhr.html");
 
@@ -45,7 +45,7 @@ describe("WhitelistTest", () => {
             { assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');" },
         ]);
 
-        sdk.whitelistNetwork('https://api.staging.carbonate.dev/internal/test_wait*');
+        sdk.whitelistNetwork('https://api.carbonate.dev/internal/test_wait*');
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/whitelist_fetch.html");
 
