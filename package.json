@@ -1,6 +1,6 @@
 {
   "name": "@carbonate/sdk",
-  "version": "1.0.0",
+  "version": "0.0.4",
   "description": "Carbonate turns simple language driven instructions into end-to-end tests",
   "main": "dist/SDK.js",
   "types": "dist/SDK.d.ts",

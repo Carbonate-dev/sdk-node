@@ -1,8 +1,8 @@
 import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } from "@jest/globals";
-import {SDK} from "../../../src/SDK";
+import SDK from "../../../src/SDK";
 import Api from "../../../src/api/api"
 import Puppeteer from "../../../src/browser/puppeteer"
-import {TestLogger} from "../../../src/logger/test_logger";
+import {TestLogger} from "../../../src/logger";
 jest.mock("../../../src/api/api");
 
 describe("WaitTest", () => {

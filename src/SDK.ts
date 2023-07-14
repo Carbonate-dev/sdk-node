@@ -9,7 +9,7 @@ import Logger from "./logger/logger";
 import {NullLogger} from "./logger/null_logger";
 import {action} from "webdriverio/build/commands/browser/action";
 
-export class SDK {
+export default class SDK {
     browser: Browser;
     client: Api;
     testPrefix: string | null = null;
