@@ -272,7 +272,7 @@ export class SDK {
     }
 
     async extractLookup(instruction: string): Promise<any> {
-        const lookup = this.client.extractLookup(this.getTestName(), instruction, await this.browser.getHtml());
+        const lookup = await this.client.extractLookup(this.getTestName(), instruction, await this.browser.getHtml());
 
         if (lookup !== null) {
             this.logger.info("Successfully extracted lookup", {lookup});
