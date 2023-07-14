@@ -256,7 +256,7 @@ export class SDK {
     async performAssertion(assertion: any): Promise<boolean> {
         this.logger.notice("Performing assertion", {assertion: assertion['assertion']});
 
-        return await this.browser.evaluateScript('window.carbonate_reset_assertion_result(); ' + assertion['assertion'] + '; window.carbonate_assertion_result;');
+        return await this.browser.evaluateScript('window.carbonate_reset_assertion_result(); (function() { ' + assertion['assertion'] + ' })(); window.carbonate_assertion_result;');
     }
 
     cachedLookup(instruction: string): any {
