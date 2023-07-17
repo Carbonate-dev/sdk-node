@@ -12,7 +12,7 @@ Learn more about Carbonate at [https://carbonate.dev](https://carbonate.dev).
 
 ## Getting Started
 
-Check out the [getting started guide](https://docs.carbonate.dev/sdk/getting-started/puppeteer) for instructions on how to integrate Carbonate into your test suite.
+Check out the [getting started guide](https://carbonate.dev/docs/sdk/getting-started/puppeteer) for instructions on how to integrate Carbonate into your test suite.
 
 ## License
 Distributed under the MIT License.
