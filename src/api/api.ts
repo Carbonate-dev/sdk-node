@@ -1,4 +1,5 @@
 import {ApiException} from "../exceptions/exceptions";
+import {Action, Actions, Assertion, Assertions, Lookup} from "../SDK";
 
 export default class Api {
     private apiUrl: string;
@@ -59,12 +60,12 @@ export default class Api {
         testName: string,
         instruction: string,
         html: string
-    ): Promise<any[]> {
+    ): Promise<Action[]> {
         const actions = await this.callApi('actions/extract', {
             test_name: testName,
             story: instruction,
             html: html,
-        });
+        }) as Actions;
 
         if (actions === null) {
             return [];
@@ -77,12 +78,12 @@ export default class Api {
         testName: string,
         instruction: string,
         html: string
-    ): Promise<any[]> {
+    ): Promise<Assertion[]> {
         const assertion = await this.callApi('assertions/extract', {
             test_name: testName,
             story: instruction,
             html: html,
-        });
+        }) as Assertions;
 
         if (assertion === null) {
             return [];
@@ -95,12 +96,12 @@ export default class Api {
         testName: string,
         instruction: string,
         html: string
-    ): Promise<any[] | null> {
+    ): Promise<Lookup | null> {
         const lookup = await this.callApi('lookup/extract', {
             test_name: testName,
             story: instruction,
             html: html,
-        });
+        }) as Lookup;
 
         return lookup;
     }

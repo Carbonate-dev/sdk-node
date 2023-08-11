@@ -7,7 +7,37 @@ import * as fs from "fs";
 import {WriteStream} from "fs";
 import Logger from "./logger/logger";
 import {NullLogger} from "./logger/null_logger";
-import {action} from "webdriverio/build/commands/browser/action";
+
+enum ActionType {
+    CLICK = 'click',
+    TYPE = 'type',
+    KEY = 'key',
+}
+
+export interface Action {
+    action: ActionType;
+    xpath: string;
+    text?: string;
+}
+
+export interface Actions {
+    actions: Action[];
+    version: string;
+}
+
+export interface Assertion {
+    assertion: string;
+}
+
+export interface Assertions {
+    assertions: Assertion[];
+    version: string;
+}
+
+export interface Lookup {
+    xpath: string;
+    version: string;
+}
 
 export default class SDK {
     browser: Browser;
@@ -17,7 +47,7 @@ export default class SDK {
     cacheDir: string | null;
     logger: Logger;
     networkWhitelist: string[] = [];
-    instructionCache: { [key: string]: any } = {};
+    instructionCache: { [key: string]: Action[]|Assertion[]|Lookup } = {};
 
     constructor(
         browser: Browser,
@@ -88,7 +118,7 @@ export default class SDK {
         return this.cacheDir + '/' + slugify(this.testName) + '/' + slugify(instruction) + '.json';
     }
 
-    cachedActions(instruction: string): any[] {
+    cachedActions(instruction: string): Action[] {
         let cachePath = this.getCachePath(instruction);
 
         if (cachePath && fs.existsSync(cachePath)) {
@@ -101,7 +131,7 @@ export default class SDK {
         return [];
     }
 
-    async extractActions(instruction: string): Promise<any[]> {
+    async extractActions(instruction: string): Promise<Action[]> {
         const actions = await this.client.extractActions(this.getTestName(), instruction, await this.browser.getHtml());
 
         if (actions.length > 0) {
@@ -114,7 +144,7 @@ export default class SDK {
         throw new FailedExtractionException('Could not extract actions');
     }
 
-    cacheInstruction(result: any, instruction: string): void {
+    cacheInstruction(result: Action[]|Assertion[]|Lookup, instruction: string): void {
         if (this.cacheDir != null) {
             this.instructionCache[instruction] = result;
         }
@@ -151,7 +181,7 @@ export default class SDK {
         this.instructionCache = {};
     }
 
-    cachedAssertions(instruction: string): any[] {
+    cachedAssertions(instruction: string): Assertion[] {
         let cachePath = this.getCachePath(instruction);
 
         if (cachePath && fs.existsSync(cachePath)) {
@@ -164,7 +194,7 @@ export default class SDK {
         return [];
     }
 
-    async extractAssertions(instruction: string): Promise<any[]> {
+    async extractAssertions(instruction: string): Promise<Assertion[]> {
         const assertions = await this.client.extractAssertions(this.getTestName(), instruction, await this.browser.getHtml());
 
         if (assertions.length > 0) {
@@ -181,7 +211,7 @@ export default class SDK {
         this.logger.info("Querying action", {test_name: this.getTestName(), instruction: instruction});
         let actions = this.cachedActions(instruction);
 
-        const isActionReady = async (action: any) => (await this.browser.findByXpath(action['xpath'])).length > 0;
+        const isActionReady = async (action: Action) => (await this.browser.findByXpath(action['xpath'])).length > 0;
         await this.waitForLoad(async () => actions.length > 0 && (await Promise.all(actions.map(isActionReady))).every(_ => _));
 
         if (actions.length === 0) {
@@ -192,7 +222,7 @@ export default class SDK {
         await this.performActions(actions);
     }
 
-    async performActions(actions: any[]): Promise<any[]> {
+    async performActions(actions: Action[]): Promise<Action[]> {
         const previousActions = [];
         for (const action of actions) {
             this.logger.notice("Performing action", {action: action});
@@ -222,7 +252,7 @@ export default class SDK {
 
         let assertions = this.cachedAssertions(instruction);
 
-        const isAssertionReady = async (assertion: any): Promise<boolean> => {
+        const isAssertionReady = async (assertion: Assertion): Promise<boolean> => {
             try {
                 await this.performAssertion(assertion);
                 return true;
@@ -241,7 +271,7 @@ export default class SDK {
         return this.performAssertions(assertions);
     }
 
-    async performAssertions(assertions: any[]): Promise<boolean> {
+    async performAssertions(assertions: Assertion[]): Promise<boolean> {
         for (const assertion of assertions) {
             const result = await this.performAssertion(assertion);
 
@@ -253,13 +283,13 @@ export default class SDK {
         return true;
     }
 
-    async performAssertion(assertion: any): Promise<boolean> {
+    async performAssertion(assertion: Assertion): Promise<boolean> {
         this.logger.notice("Performing assertion", {assertion: assertion['assertion']});
 
         return await this.browser.evaluateScript('window.carbonate_reset_assertion_result(); (function() { ' + assertion['assertion'] + ' })(); window.carbonate_assertion_result;');
     }
 
-    cachedLookup(instruction: string): any {
+    cachedLookup(instruction: string): Lookup|null {
         let cachePath = this.getCachePath(instruction);
         if (cachePath && fs.existsSync(cachePath)) {
             // Open the file as parse the json
@@ -271,7 +301,7 @@ export default class SDK {
         return null;
     }
 
-    async extractLookup(instruction: string): Promise<any> {
+    async extractLookup(instruction: string): Promise<Lookup> {
         const lookup = await this.client.extractLookup(this.getTestName(), instruction, await this.browser.getHtml());
 
         if (lookup !== null) {
