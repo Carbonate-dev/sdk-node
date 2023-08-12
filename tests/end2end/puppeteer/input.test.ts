@@ -10,7 +10,9 @@ jest.mock("../../../src/api/api");
 describe("InputTest", () => {
     let api = new Api();
     let browser = new Puppeteer(page);
-    let sdk = new SDK(browser, null, null, null, null, api);
+    let sdk = new SDK(browser, null, {
+        client: api
+    });
 
     setSDK(sdk);
 

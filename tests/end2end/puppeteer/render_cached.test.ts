@@ -12,7 +12,9 @@ jest.mock("../../../src/api/api");
 describe("RenderCachedTest", () => {
     let api = new Api();
     let browser = new Puppeteer(page);
-    let sdk = new SDK(browser, __dirname + '/' + path.parse(__filename).name, null, null, null, api);
+    let sdk = new SDK(browser, __dirname + '/' + path.parse(__filename).name, {
+        client: api
+    });
 
     setSDK(sdk);
 

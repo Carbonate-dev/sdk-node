@@ -1,15 +1,15 @@
-import { Browser } from './browser/browser';
+import {Browser} from './browser/browser';
 import Api from './api/api';
-import { FailedExtractionException, InvalidXpathException, BrowserException } from './exceptions/exceptions';
+import {BrowserException, FailedExtractionException, InvalidXpathException} from './exceptions/exceptions';
 import slugify from './slugify';
-import { TestLogger } from './logger/test_logger';
+import {TestLogger} from './logger/test_logger';
 import * as fs from "fs";
 import Logger from "./logger/logger";
 import {NullLogger} from "./logger/null_logger";
 import {Circus} from "@jest/types";
-import WritableStream = NodeJS.WritableStream;
 import isWritableStream from "./isWriteStream";
 import {ActionType} from "./actionType";
+import WritableStream = NodeJS.WritableStream;
 
 export interface Action {
     action: ActionType;
@@ -37,6 +37,14 @@ export interface Lookup {
     version: string;
 }
 
+type SDKOptions = {
+    apiUserId?: string | null,
+    apiKey?: string | null,
+    logging?: WritableStream | false | null | string | Logger,
+    client?: Api | null,
+    record?: boolean | null,
+}
+
 export default class SDK {
     browser: Browser;
     client: Api;
@@ -50,29 +58,26 @@ export default class SDK {
     actionIds: string[] = [];
     assertionIds: string[] = [];
     lookupIds: string[] = [];
+    recordTests: boolean | null = null;
 
     constructor(
         browser: Browser,
         cacheDir: string | null = null,
-        apiUserId: string | null = null,
-        apiKey: string | null = null,
-        logging: WritableStream | false | null | string | Logger = null,
-        client: Api | null = null,
+        options: SDKOptions = {},
     ) {
         this.browser = browser;
-        this.client = client || new Api(apiUserId, apiKey);
+        this.client = options.client || new Api(options.apiUserId, options.apiKey);
         this.cacheDir = cacheDir || process.env.CARBONATE_CACHE_DIR || null;
+        this.recordTests = options.record || process.env.CARBONATE_RECORD === 'true' || null;
 
-        // Path to file or IO object
-        if (logging === false) {
+        if (options.logging === false) {
             this.logger = new NullLogger();
         }
-        else if (logging === null || typeof logging === 'string' || isWritableStream(logging)) {
-            this.logger = new TestLogger(logging);
+        else if (options.logging == null || typeof options.logging === 'string' || isWritableStream(options.logging)) {
+            this.logger = new TestLogger(options.logging);
         }
-        // Custom logger
         else {
-            this.logger = logging;
+            this.logger = options.logging;
         }
     }
 
@@ -190,6 +195,14 @@ export default class SDK {
         }
 
         this.instructionCache = {};
+    }
+
+    async record(name: string, data: any): Promise<void> {
+        if (this.recordTests === false) {
+            return;
+        }
+
+        return await this.browser.record(name, data);
     }
 
     cachedAssertions(instruction: string): Assertions | null {
@@ -379,11 +392,23 @@ export default class SDK {
         if (this.cacheDir != null) {
             this.writeCache();
         }
+
+        if (this.recordTests === true) {
+            await this.uploadRecording();
+        }
     }
 
-    async uploadRecording()
+    async getRecording() {
+        return await this.browser.evaluateScript('window.carbonate_rrweb_recording');
+    }
+
+    async uploadRecording(): Promise<void>
     {
-        const recording = await this.browser.evaluateScript('window.carbonate_rrweb_recording');
+        if (this.recordTests === false) {
+            return;
+        }
+
+        const recording = await this.getRecording();
 
         this.client.uploadRecording(this.getTestName(), recording, this.startedAt ?? new Date(), this.actionIds, this.assertionIds, this.lookupIds);
     }

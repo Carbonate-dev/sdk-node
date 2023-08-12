@@ -4,7 +4,7 @@ import Api from "../../src/api/api"
 import Puppeteer from "../../src/browser/puppeteer"
 
 let browser = new Puppeteer(page);
-let sdk = new SDK(browser, null, null, null, null, new Api(null, null, 'https://api.staging.carbonate.dev/'));
+let sdk = new SDK(browser, null);
 
 setSDK(sdk);
 
