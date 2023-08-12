@@ -2,6 +2,9 @@ import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } fr
 import SDK from "../../../src/SDK";
 import Api from "../../../src/api/api"
 import Puppeteer from "../../../src/browser/puppeteer"
+import 'node-fetch';
+
+jest.mock('node-fetch', () => jest.fn());
 jest.mock("../../../src/api/api");
 
 describe("ClickTest", () => {
@@ -21,12 +24,18 @@ describe("ClickTest", () => {
         ['reset', '//input[@id="reset"]'],
         ['link', '//a[@id="link"]'],
     ])("It should click the element", async (name, xpath) => {
-        api.extractActions = jest.fn().mockResolvedValue([
-            { action: "click", xpath },
-        ]);
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            { assertion: `carbonate_assert(window['${name}_clicked'] === true);` },
-        ]);
+        api.extractActions = jest.fn().mockResolvedValue({
+            actions: [
+               { action: "click", xpath },
+            ],
+            version: 'test1',
+        });
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                { assertion: `carbonate_assert(window['${name}_clicked'] === true);` },
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/click.html");
 

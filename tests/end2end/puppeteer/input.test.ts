@@ -2,7 +2,9 @@ import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } fr
 import SDK from "../../../src/SDK";
 import Api from "../../../src/api/api"
 import Puppeteer from "../../../src/browser/puppeteer"
-import {json} from "stream/consumers";
+import 'node-fetch';
+
+jest.mock('node-fetch', () => jest.fn());
 jest.mock("../../../src/api/api");
 
 describe("InputTest", () => {
@@ -44,12 +46,18 @@ describe("InputTest", () => {
 
     test.each([...inputDataProvider, ...dateDataProvider])
     ("It should fill in an input", async (name, xpath, value) => {
-        api.extractActions = jest.fn().mockResolvedValue([
-            { action: "type", xpath, text: value },
-        ]);
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            { assertion: `carbonate_assert(document.querySelector('#${name}').value == ${JSON.stringify(value)});` },
-        ]);
+        api.extractActions = jest.fn().mockResolvedValue({
+            actions: [
+                { action: "type", xpath, text: value },
+            ],
+            version: 'test1',
+        });
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                { assertion: `carbonate_assert(document.querySelector('#${name}').value == ${JSON.stringify(value)});` },
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/input.html");
 
@@ -70,12 +78,18 @@ describe("InputTest", () => {
 
     test.each(checkDataProvider)
     ("It should click the element", async (name, xpath, value) => {
-        api.extractActions = jest.fn().mockResolvedValue([
-            { action: "click", xpath },
-        ]);
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            { assertion: `carbonate_assert(document.querySelector('#${name}').value == ${JSON.stringify(value)});` },
-        ]);
+        api.extractActions = jest.fn().mockResolvedValue({
+            actions: [
+                { action: "click", xpath },
+            ],
+            version: 'test1',
+        });
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                { assertion: `carbonate_assert(document.querySelector('#${name}').value == ${JSON.stringify(value)});` },
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/input.html");
 
@@ -94,12 +108,18 @@ describe("InputTest", () => {
     });
 
     test("It should fill in an input when given a label", async () => {
-        api.extractActions = jest.fn().mockResolvedValue([
-            { action: "type", xpath: '//label[@for="input"]', text: 'teststr' },
-        ]);
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            { assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');" },
-        ]);
+        api.extractActions = jest.fn().mockResolvedValue({
+            actions: [
+                { action: "type", xpath: '//label[@for="input"]', text: 'teststr' },
+            ],
+            version: 'test1',
+        });
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                { assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');" },
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/label.html");
 

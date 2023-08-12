@@ -1,1 +1,4 @@
-[{"assertion":"carbonate_assert(document.querySelector('input').value == '');"}]
+{
+  "assertions": [{"assertion":"carbonate_assert(document.querySelector('input').value == '');"}],
+  "version": "test1"
+}

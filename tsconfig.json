@@ -14,8 +14,8 @@
     "esModuleInterop": true,
     "lib": [
       "es2022",
-      "dom",
-      "es2022.error"
+      "es2022.error",
+      "dom"
     ],
     "skipLibCheck": true
   },

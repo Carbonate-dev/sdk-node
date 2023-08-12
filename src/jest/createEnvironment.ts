@@ -62,7 +62,7 @@ export default function createEnvironment({ baseEnvironment } : { baseEnvironmen
                 }
 
                 if (["test_failure", "test_fn_failure"].includes(event.name) && this.sdk) {
-                    let logs = this.sdk.handleFailedTest();
+                    let logs = await this.sdk.handleFailedTest(state.currentlyRunningTest?.errors);
 
                     if (logs && state.currentlyRunningTest) {
                         let injectedLogs = false;

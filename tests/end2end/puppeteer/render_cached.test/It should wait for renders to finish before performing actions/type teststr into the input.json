@@ -1,1 +1,4 @@
-[{"action": "type", "xpath": "//label[@for=\"input\"]", "text": "teststr"}]
+{
+  "actions": [{"action": "type", "xpath": "//label[@for=\"input\"]", "text": "teststr"}],
+  "version": "test1"
+}

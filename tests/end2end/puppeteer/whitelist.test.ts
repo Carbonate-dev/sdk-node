@@ -2,6 +2,9 @@ import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } fr
 import SDK from "../../../src/SDK";
 import Api from "../../../src/api/api"
 import Puppeteer from "../../../src/browser/puppeteer"
+import 'node-fetch';
+
+jest.mock('node-fetch', () => jest.fn());
 jest.mock("../../../src/api/api");
 
 describe("WhitelistTest", () => {
@@ -16,12 +19,18 @@ describe("WhitelistTest", () => {
     });
 
     test("It should not wait for whitelisted XHR", async () => {
-        api.extractActions = jest.fn().mockResolvedValue([
-            { action: "type", xpath: '//label[@for="input"]', text: 'teststr' },
-        ]);
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            { assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');" },
-        ]);
+        api.extractActions = jest.fn().mockResolvedValue({
+            actions: [
+                { action: "type", xpath: '//label[@for="input"]', text: 'teststr' },
+            ],
+            version: 'test1',
+        });
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                { assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');" },
+            ],
+            version: 'test1',
+        });
 
         sdk.whitelistNetwork('https://api.carbonate.dev/internal/test_wait*');
 
@@ -38,12 +47,18 @@ describe("WhitelistTest", () => {
     });
 
     test("It should not wait for whitelisted Fetch", async () => {
-        api.extractActions = jest.fn().mockResolvedValue([
-            { action: "type", xpath: '//label[@for="input"]', text: 'teststr' },
-        ]);
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            { assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');" },
-        ]);
+        api.extractActions = jest.fn().mockResolvedValue({
+            actions: [
+                { action: "type", xpath: '//label[@for="input"]', text: 'teststr' },
+            ],
+            version: 'test1',
+        });
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                { assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');" },
+            ],
+            version: 'test1',
+        });
 
         sdk.whitelistNetwork('https://api.carbonate.dev/internal/test_wait*');
 

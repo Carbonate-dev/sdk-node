@@ -2,6 +2,9 @@ import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } fr
 import SDK from "../../../src/SDK";
 import Api from "../../../src/api/api"
 import Puppeteer from "../../../src/browser/puppeteer"
+import 'node-fetch';
+
+jest.mock('node-fetch', () => jest.fn());
 jest.mock("../../../src/api/api");
 
 describe("WaitFailedTest", () => {
@@ -16,9 +19,12 @@ describe("WaitFailedTest", () => {
     });
 
     test("It should handle failed XHR when performing actions", async () => {
-        api.extractActions = jest.fn().mockResolvedValue([
-            {action: "type", xpath: '//label[@for="input"]', text: 'teststr'},
-        ]);
+        api.extractActions = jest.fn().mockResolvedValue({
+            actions: [
+                {action: "type", xpath: '//label[@for="input"]', text: 'teststr'},
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/wait_xhr_failed.html");
 
@@ -32,9 +38,12 @@ describe("WaitFailedTest", () => {
     });
 
     test("It should handle failed XHR when performing assertions", async () => {
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            {assertion: "carbonate_assert(document.querySelector('input').value == '');"},
-        ]);
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                {assertion: "carbonate_assert(document.querySelector('input').value == '');"},
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/wait_xhr_failed.html");
 
@@ -46,12 +55,18 @@ describe("WaitFailedTest", () => {
     });
 
     test("It should handle failed Fetch when performing actions", async () => {
-        api.extractActions = jest.fn().mockResolvedValue([
-            {action: "type", xpath: '//label[@for="input"]', text: 'teststr'},
-        ]);
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            {assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');"},
-        ]);
+        api.extractActions = jest.fn().mockResolvedValue({
+            actions: [
+                {action: "type", xpath: '//label[@for="input"]', text: 'teststr'},
+            ],
+            version: 'test1',
+        });
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                {assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');"},
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/wait_fetch_failed.html");
 
@@ -65,9 +80,12 @@ describe("WaitFailedTest", () => {
     });
 
     test("It should handle failed Fetch when performing assertionns", async () => {
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            {assertion: "carbonate_assert(document.querySelector('input').value == '');"},
-        ]);
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                {assertion: "carbonate_assert(document.querySelector('input').value == '');"},
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/wait_fetch_failed.html");
 

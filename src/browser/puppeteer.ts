@@ -1,8 +1,10 @@
 // import {By, WebDriver as SeleniumWebDriver, WebElement} from 'selenium-webdriver';
-import {Action} from '../action';
+import {ActionType} from '../actionType';
 import {Browser} from './browser';
-import {BrowserException} from '../exceptions/exceptions';
-import {Browser as Client, ElementHandle, Page} from 'puppeteer';
+import {BrowserException, FailedExtractionException} from '../exceptions/exceptions';
+import {ElementHandle, KeyInput, Page} from 'puppeteer';
+import {Action} from "../SDK";
+import {readFileSync} from "fs";
 
 export default class Puppeteer implements Browser {
     private browser: Page;
@@ -10,8 +12,9 @@ export default class Puppeteer implements Browser {
 
     constructor(driver: Page) {
         this.browser = driver;
-        const injectJsPath = require.resolve(__dirname + '/../../resources/carbonate.js');
-        this.injectJs = require('fs').readFileSync(injectJsPath, 'utf-8');
+        const carbonateJs = readFileSync(require.resolve(__dirname + '/../../resources/carbonate.js'), 'utf-8');
+        const rrwebJs = readFileSync(require.resolve(__dirname + '/../../resources/rrweb.js'), 'utf-8');
+        this.injectJs = carbonateJs + rrwebJs;
     }
 
     async getHtml(): Promise<string> {
@@ -47,8 +50,8 @@ export default class Puppeteer implements Browser {
         }
     }
 
-    async performAction(action: any, elements: ElementHandle<Element>[]): Promise<void> {
-        if (action.action === Action.CLICK) {
+    async performAction(action: Action, elements: ElementHandle<Element>[]): Promise<void> {
+        if (action.action === ActionType.CLICK) {
             let tagName = (await (
                 await elements[0].getProperty('tagName')
             ).jsonValue()).toLowerCase();
@@ -63,7 +66,11 @@ export default class Puppeteer implements Browser {
             else {
                 await elements[0].click();
             }
-        } else if (action.action === Action.TYPE) {
+        } else if (action.action === ActionType.TYPE) {
+            if (!action.text) {
+                throw new FailedExtractionException('No text provided for type action');
+            }
+
             let tagName = (await (
                 await elements[0].getProperty('tagName')
             ).jsonValue()).toLowerCase();
@@ -93,8 +100,19 @@ export default class Puppeteer implements Browser {
             await elements[0].type(action.text);
             this.evaluateScript('!!document.activeElement ? document.activeElement.blur() : 0');
 
-        } else if (action.action === Action.KEY) {
-            await elements[0].press(action.key);
+        } else if (action.action === ActionType.KEY) {
+            if (!action.key) {
+                throw new FailedExtractionException('No key provided for key action');
+            }
+
+            await elements[0].press(action.key as KeyInput);
         }
+    }
+
+    async record(name: string,  data: any = {}): Promise<void> {
+        await this.browser.evaluate(
+            "(name, data) => window.carbonate_rrweb.record.addCustomEvent(name, data)",
+            [name, data]
+        );
     }
 }

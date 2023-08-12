@@ -1,3 +1,5 @@
+import {Action} from "../SDK";
+
 export interface Browser {
     getHtml(): Promise<string>;
 
@@ -11,5 +13,7 @@ export interface Browser {
 
     evaluateScript(script: string): Promise<any>;
 
-    performAction(action: any, elements: any[]): Promise<void>;
+    performAction(action: Action, elements: any[]): Promise<void>;
+
+    record(name: string, data: any): Promise<void>;
 }

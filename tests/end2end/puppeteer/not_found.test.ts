@@ -2,6 +2,9 @@ import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } fr
 import SDK from "../../../src/SDK";
 import Api from "../../../src/api/api"
 import Puppeteer from "../../../src/browser/puppeteer"
+import 'node-fetch';
+
+jest.mock('node-fetch', () => jest.fn());
 jest.mock("../../../src/api/api");
 
 describe("NotFoundTest", () => {
@@ -16,9 +19,12 @@ describe("NotFoundTest", () => {
     });
 
     test("It should error if xpath is not found for an action", async () => {
-        api.extractActions = jest.fn().mockResolvedValue([
-            { action: "click", xpath: "//select//option[text()='Birthday']" },
-        ]);
+        api.extractActions = jest.fn().mockResolvedValue({
+            actions: [
+                { action: "click", xpath: "//select//option[text()='Birthday']" },
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/select.html");
 
@@ -32,6 +38,7 @@ describe("NotFoundTest", () => {
     test("It should error if xpath is not found for a lookup", async () => {
         api.extractLookup = jest.fn().mockResolvedValue({
             xpath: "//select//option[text()='Birthday']",
+            version: 'test1',
         });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/select.html");

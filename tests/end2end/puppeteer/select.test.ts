@@ -2,6 +2,9 @@ import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } fr
 import SDK from "../../../src/SDK";
 import Api from "../../../src/api/api"
 import Puppeteer from "../../../src/browser/puppeteer"
+import 'node-fetch';
+
+jest.mock('node-fetch', () => jest.fn());
 jest.mock("../../../src/api/api");
 
 describe("SelectTest", () => {
@@ -16,12 +19,18 @@ describe("SelectTest", () => {
     });
 
     test("It should select the option", async () => {
-        api.extractActions = jest.fn().mockResolvedValue([
-            { action: "click", xpath: '//select/option[text()="Two"]' },
-        ]);
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            { assertion: "carbonate_assert(document.querySelector('select').value == '2');" },
-        ]);
+        api.extractActions = jest.fn().mockResolvedValue({
+            actions: [
+                { action: "click", xpath: '//select/option[text()="Two"]' },
+            ],
+            version: 'test1',
+        });
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                { assertion: "carbonate_assert(document.querySelector('select').value == '2');" },
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/select.html");
 
@@ -36,12 +45,18 @@ describe("SelectTest", () => {
     });
 
     test("It should fail when the assertion is wrong", async () => {
-        api.extractActions = jest.fn().mockResolvedValue([
-            { action: "click", xpath: '//select/option[text()="Two"]' },
-        ]);
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            { assertion: "carbonate_assert(document.querySelector('select').value == '3');" },
-        ]);
+        api.extractActions = jest.fn().mockResolvedValue({
+            actions: [
+                { action: "click", xpath: '//select/option[text()="Two"]' },
+            ],
+            version: 'test1',
+        });
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                { assertion: "carbonate_assert(document.querySelector('select').value == '3');" },
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/select.html");
 
@@ -56,13 +71,19 @@ describe("SelectTest", () => {
     });
 
     test("It should select the option through the select", async () => {
-        api.extractActions = jest.fn().mockResolvedValue([
-            { action: "click", xpath: '//select' },
-            { action: "click", xpath: '//select/option[text()="Two"]' },
-        ]);
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            { assertion: "carbonate_assert(document.querySelector('select').value == '2');" },
-        ]);
+        api.extractActions = jest.fn().mockResolvedValue({
+            actions: [
+                { action: "click", xpath: '//select' },
+                { action: "click", xpath: '//select/option[text()="Two"]' },
+            ],
+            version: 'test1',
+        });
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                { assertion: "carbonate_assert(document.querySelector('select').value == '2');" },
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/select.html");
 

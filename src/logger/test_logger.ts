@@ -1,11 +1,12 @@
 import * as fs from "fs";
 import Logger from "./logger";
+import WritableStream = NodeJS.WritableStream;
 
 export class TestLogger implements Logger {
-    private outputFile: fs.WriteStream | null;
+    private outputFile: WritableStream | null;
     private logs: Array<{ level: string; message: string; context: Record<string, any> }>;
 
-    constructor(outputPath: fs.WriteStream | string | null = null) {
+    constructor(outputPath: WritableStream | string | null = null) {
         if (typeof outputPath === 'string') {
             outputPath = fs.createWriteStream(outputPath);
         }

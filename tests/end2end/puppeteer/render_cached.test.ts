@@ -4,9 +4,12 @@ import Api from "../../../src/api/api"
 import Puppeteer from "../../../src/browser/puppeteer"
 import * as path from "path";
 import {TestLogger} from "../../../src/logger";
+import 'node-fetch';
+
+jest.mock('node-fetch', () => jest.fn());
 jest.mock("../../../src/api/api");
 
-describe("RenderTest", () => {
+describe("RenderCachedTest", () => {
     let api = new Api();
     let browser = new Puppeteer(page);
     let sdk = new SDK(browser, __dirname + '/' + path.parse(__filename).name, null, null, null, api);
@@ -18,12 +21,18 @@ describe("RenderTest", () => {
     });
 
     test("It should wait for renders to finish before performing actions", async () => {
-        api.extractActions = jest.fn().mockResolvedValue([
-            { action: "type", xpath: '//label[@for="input"]', text: 'teststr' },
-        ]);
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            { assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');" },
-        ]);
+        api.extractActions = jest.fn().mockResolvedValue({
+            actions: [
+                { action: "type", xpath: '//label[@for="input"]', text: 'teststr' },
+            ],
+            version: 'test1',
+        });
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                { assertion: "carbonate_assert(document.querySelector('input').value == 'teststr');" },
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/render.html");
 
@@ -42,9 +51,12 @@ describe("RenderTest", () => {
     });
 
     test("It should wait for renders to finish before performing assertions", async () => {
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            { assertion: "carbonate_assert(document.querySelector('label').innerText == 'Test');" },
-        ]);
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                { assertion: "carbonate_assert(document.querySelector('label').innerText == 'Test');" },
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/render.html");
 

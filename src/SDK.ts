@@ -4,20 +4,18 @@ import { FailedExtractionException, InvalidXpathException, BrowserException } fr
 import slugify from './slugify';
 import { TestLogger } from './logger/test_logger';
 import * as fs from "fs";
-import {WriteStream} from "fs";
 import Logger from "./logger/logger";
 import {NullLogger} from "./logger/null_logger";
-
-enum ActionType {
-    CLICK = 'click',
-    TYPE = 'type',
-    KEY = 'key',
-}
+import {Circus} from "@jest/types";
+import WritableStream = NodeJS.WritableStream;
+import isWritableStream from "./isWriteStream";
+import {ActionType} from "./actionType";
 
 export interface Action {
     action: ActionType;
     xpath: string;
     text?: string;
+    key?: string;
 }
 
 export interface Actions {
@@ -47,14 +45,18 @@ export default class SDK {
     cacheDir: string | null;
     logger: Logger;
     networkWhitelist: string[] = [];
-    instructionCache: { [key: string]: Action[]|Assertion[]|Lookup } = {};
+    instructionCache: { [key: string]: Actions|Assertions|Lookup } = {};
+    startedAt: Date | null = null;
+    actionIds: string[] = [];
+    assertionIds: string[] = [];
+    lookupIds: string[] = [];
 
     constructor(
         browser: Browser,
         cacheDir: string | null = null,
         apiUserId: string | null = null,
         apiKey: string | null = null,
-        logging: WriteStream | false | null | string | Logger = null,
+        logging: WritableStream | false | null | string | Logger = null,
         client: Api | null = null,
     ) {
         this.browser = browser;
@@ -65,7 +67,7 @@ export default class SDK {
         if (logging === false) {
             this.logger = new NullLogger();
         }
-        else if (logging === null || typeof logging === 'string' || logging instanceof WriteStream) {
+        else if (logging === null || typeof logging === 'string' || isWritableStream(logging)) {
             this.logger = new TestLogger(logging);
         }
         // Custom logger
@@ -89,23 +91,32 @@ export default class SDK {
     async waitForLoad(skipFunc: () => Promise<boolean>): Promise<void> {
         let i = 0;
 
-        while (await this.browser.evaluateScript('window.carbonate_dom_updating') || await this.browser.evaluateScript('window.carbonate_active_xhr')) {
+        let loggedDomUpdating = false;
+        let loggedNetworkUpdating = false;
+        let domUpdating = false;
+
+        while ((domUpdating = await this.browser.evaluateScript('window.carbonate_dom_updating')) || await this.browser.evaluateScript('window.carbonate_active_xhr')) {
             if (await skipFunc()) {
                 this.logger.info("Found cached element, skipping DOM wait");
                 break;
             }
 
-            if (await this.browser.evaluateScript('window.carbonate_dom_updating')) {
-                this.logger.info("Waiting for DOM update to finish");
-            } else {
+            if (domUpdating) {
+                if (!loggedDomUpdating) {
+                    this.logger.info("Waiting for DOM update to finish");
+                    loggedDomUpdating = true;
+                }
+            }
+            else if (!loggedNetworkUpdating) {
                 this.logger.info("Waiting for active Network to finish");
+                loggedNetworkUpdating = true;
             }
 
-            if (i > 20) {
+            if (i > 240) {
                 throw new BrowserException("Waited too long for DOM/XHR update to finish");
             }
 
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 250));
             i += 1;
         }
     }
@@ -118,7 +129,7 @@ export default class SDK {
         return this.cacheDir + '/' + slugify(this.testName) + '/' + slugify(instruction) + '.json';
     }
 
-    cachedActions(instruction: string): Action[] {
+    cachedActions(instruction: string): Actions | null {
         let cachePath = this.getCachePath(instruction);
 
         if (cachePath && fs.existsSync(cachePath)) {
@@ -128,14 +139,14 @@ export default class SDK {
             return actions;
         }
 
-        return [];
+        return null;
     }
 
-    async extractActions(instruction: string): Promise<Action[]> {
+    async extractActions(instruction: string): Promise<Actions> {
         const actions = await this.client.extractActions(this.getTestName(), instruction, await this.browser.getHtml());
 
-        if (actions.length > 0) {
-            this.logger.info("Successfully extracted actions", {actions: actions});
+        if (actions.actions.length > 0) {
+            this.logger.info("Successfully extracted actions", {actions: actions.actions});
             this.cacheInstruction(actions, instruction);
 
             return actions;
@@ -144,7 +155,7 @@ export default class SDK {
         throw new FailedExtractionException('Could not extract actions');
     }
 
-    cacheInstruction(result: Action[]|Assertion[]|Lookup, instruction: string): void {
+    cacheInstruction(result: Actions|Assertions|Lookup, instruction: string): void {
         if (this.cacheDir != null) {
             this.instructionCache[instruction] = result;
         }
@@ -181,24 +192,24 @@ export default class SDK {
         this.instructionCache = {};
     }
 
-    cachedAssertions(instruction: string): Assertion[] {
+    cachedAssertions(instruction: string): Assertions | null {
         let cachePath = this.getCachePath(instruction);
 
         if (cachePath && fs.existsSync(cachePath)) {
             // Open the file as parse the json
-            const actions = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
-            this.logger.debug("Using locally cached assertions", {actions: actions});
-            return actions;
+            const assertions = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+            this.logger.debug("Using locally cached assertions", {assertions: assertions});
+            return assertions;
         }
 
-        return [];
+        return null;
     }
 
-    async extractAssertions(instruction: string): Promise<Assertion[]> {
+    async extractAssertions(instruction: string): Promise<Assertions> {
         const assertions = await this.client.extractAssertions(this.getTestName(), instruction, await this.browser.getHtml());
 
-        if (assertions.length > 0) {
-            this.logger.info("Successfully extracted assertions", {assertions: assertions});
+        if (assertions.assertions.length > 0) {
+            this.logger.info("Successfully extracted assertions", {assertions: assertions.assertions});
             this.cacheInstruction(assertions, instruction);
 
             return assertions;
@@ -209,37 +220,46 @@ export default class SDK {
 
     async action(instruction: string): Promise<void> {
         this.logger.info("Querying action", {test_name: this.getTestName(), instruction: instruction});
+        await this.browser.record('carbonate-instruction', {'instruction': instruction, 'type': 'action'});
+
         let actions = this.cachedActions(instruction);
 
-        const isActionReady = async (action: Action) => (await this.browser.findByXpath(action['xpath'])).length > 0;
-        await this.waitForLoad(async () => actions.length > 0 && (await Promise.all(actions.map(isActionReady))).every(_ => _));
+        const isActionReady = async (action: Action) => (await this.browser.findByXpath(action.xpath)).length > 0;
+        await this.waitForLoad(async () => actions != null && (await Promise.all(actions['actions'].map(isActionReady))).every(_ => _));
 
-        if (actions.length === 0) {
+        if (actions == null) {
             this.logger.notice("No actions found, extracting from page");
             actions = await this.extractActions(instruction);
         }
 
-        await this.performActions(actions);
+        this.actionIds.push(actions.version);
+
+        if ((await this.browser.findByXpath(actions.actions[0].xpath)).length === 0) {
+            throw new InvalidXpathException("Could not find element for xpath: " + actions.actions[0].xpath);
+        }
+
+        await this.performActions(actions.actions);
     }
 
     async performActions(actions: Action[]): Promise<Action[]> {
         const previousActions = [];
         for (const action of actions) {
             this.logger.notice("Performing action", {action: action});
-            const elements = await this.browser.findByXpath(action['xpath']);
+            const elements = await this.browser.findByXpath(action.xpath);
 
             if (elements.length === 0) {
-                throw new InvalidXpathException("Could not find element for xpath: " + action['xpath']);
+                throw new InvalidXpathException("Could not find element for xpath: " + action.xpath);
             }
 
             if (elements.length > 1) {
                 this.logger.warning(
                     "More than one element found for xpath",
-                    {num: elements.length, xpath: action['xpath']}
+                    {num: elements.length, xpath: action.xpath}
                 );
                 return previousActions;
             }
 
+            await this.browser.record('carbonate-action', action);
             await this.browser.performAction(action, elements);
             previousActions.push(action);
         }
@@ -249,6 +269,7 @@ export default class SDK {
 
     async assertion(instruction: string): Promise<boolean> {
         this.logger.info("Querying assertion", {test_name: this.getTestName(), instruction: instruction});
+        await this.browser.record('carbonate-instruction', {'instruction': instruction, 'type': 'assertion'});
 
         let assertions = this.cachedAssertions(instruction);
 
@@ -261,14 +282,15 @@ export default class SDK {
             }
         }
 
-        await this.waitForLoad(async () => assertions.length > 0 && (await Promise.all(assertions.map(isAssertionReady))).every(_ => _));
+        await this.waitForLoad(async () => assertions != null && (await Promise.all(assertions.assertions.map(isAssertionReady))).every(_ => _));
 
-        if (assertions.length === 0) {
+        if (assertions == null) {
             this.logger.notice("No assertions found, extracting from page");
             assertions = await this.extractAssertions(instruction);
         }
 
-        return this.performAssertions(assertions);
+        this.assertionIds.push(assertions.version);
+        return this.performAssertions(assertions.assertions);
     }
 
     async performAssertions(assertions: Assertion[]): Promise<boolean> {
@@ -285,11 +307,12 @@ export default class SDK {
 
     async performAssertion(assertion: Assertion): Promise<boolean> {
         this.logger.notice("Performing assertion", {assertion: assertion['assertion']});
+        await this.browser.record('carbonate-assertion', assertion);
 
         return await this.browser.evaluateScript('window.carbonate_reset_assertion_result(); (function() { ' + assertion['assertion'] + ' })(); window.carbonate_assertion_result;');
     }
 
-    cachedLookup(instruction: string): Lookup|null {
+    cachedLookup(instruction: string): Lookup | null {
         let cachePath = this.getCachePath(instruction);
         if (cachePath && fs.existsSync(cachePath)) {
             // Open the file as parse the json
@@ -318,17 +341,18 @@ export default class SDK {
         this.logger.info("Querying lookup", {test_name: this.getTestName(), instruction});
         let lookup = this.cachedLookup(instruction);
 
-        await this.waitForLoad(async () => lookup !== null && (await this.browser.findByXpath(lookup['xpath'])).length > 0);
+        await this.waitForLoad(async () => lookup !== null && (await this.browser.findByXpath(lookup.xpath)).length > 0);
 
         if (lookup === null) {
             this.logger.notice("No elements found, extracting from page");
             lookup = await this.extractLookup(instruction);
         }
 
-        const elements = await this.browser.findByXpath(lookup['xpath']);
+        this.lookupIds.push(lookup.version);
+        const elements = await this.browser.findByXpath(lookup.xpath);
 
         if (elements.length === 0) {
-            throw new InvalidXpathException("Could not find element for xpath: " + lookup['xpath']);
+            throw new InvalidXpathException("Could not find element for xpath: " + lookup.xpath);
         }
 
         return elements[0];
@@ -345,6 +369,10 @@ export default class SDK {
 
         this.testPrefix = testPrefix;
         this.testName = testName;
+        this.startedAt = new Date();
+        this.actionIds = [];
+        this.assertionIds = [];
+        this.lookupIds = [];
     }
 
     async endTest(): Promise<void> {
@@ -353,9 +381,17 @@ export default class SDK {
         }
     }
 
+    async uploadRecording()
+    {
+        const recording = await this.browser.evaluateScript('window.carbonate_rrweb_recording');
+
+        this.client.uploadRecording(this.getTestName(), recording, this.startedAt ?? new Date(), this.actionIds, this.assertionIds, this.lookupIds);
+    }
+
     async load(url: string): Promise<void> {
         this.logger.info("Loading page", {url, whitelist: this.networkWhitelist});
         await this.browser.load(url, this.networkWhitelist);
+        await this.browser.record('carbonate-load', {'url': url});
     }
 
     async close(): Promise<void> {
@@ -367,8 +403,19 @@ export default class SDK {
         this.networkWhitelist.push(url);
     }
 
-    handleFailedTest(): string | null {
+    async handleFailedTest(errors: Circus.TestError[] | undefined): Promise<string | null> {
         this.instructionCache = {};
+
+        if (errors !== undefined) {
+            await Promise.all(
+                errors.map(error => this.browser.record('carbonate-error', {
+                    'message': error.message,
+                    'trace': error.stack,
+                }))
+            );
+        }
+
+        await this.uploadRecording();
 
         if (this.logger instanceof TestLogger) {
             return this.logger.getLogs()

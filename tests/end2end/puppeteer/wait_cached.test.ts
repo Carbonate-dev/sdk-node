@@ -2,12 +2,14 @@ import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } fr
 import SDK from "../../../src/SDK";
 import Api from "../../../src/api/api"
 import Puppeteer from "../../../src/browser/puppeteer"
-import mocked = jest.mocked;
 import * as path from "path";
 import {TestLogger} from "../../../src/logger";
+import 'node-fetch';
+
+jest.mock('node-fetch', () => jest.fn());
 jest.mock("../../../src/api/api");
 
-describe("WaitTest", () => {
+describe("WaitCachedTest", () => {
     let api = new Api();
     let browser = new Puppeteer(page);
     let sdk = new SDK(browser, __dirname + '/' + path.parse(__filename).name, null, null, null, api);

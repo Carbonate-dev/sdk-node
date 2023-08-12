@@ -1,5 +1,7 @@
 import {ApiException} from "../exceptions/exceptions";
-import {Action, Actions, Assertion, Assertions, Lookup} from "../SDK";
+import {Actions, Assertions, Lookup} from "../SDK";
+import fetch from "node-fetch";
+import zlib from "zlib";
 
 export default class Api {
     private apiUrl: string;
@@ -60,49 +62,49 @@ export default class Api {
         testName: string,
         instruction: string,
         html: string
-    ): Promise<Action[]> {
-        const actions = await this.callApi('actions/extract', {
+    ): Promise<Actions> {
+        return await this.callApi('actions/extract', {
             test_name: testName,
             story: instruction,
             html: html,
         }) as Actions;
-
-        if (actions === null) {
-            return [];
-        }
-
-        return actions['actions'];
     }
 
     async extractAssertions(
         testName: string,
         instruction: string,
         html: string
-    ): Promise<Assertion[]> {
-        const assertion = await this.callApi('assertions/extract', {
+    ): Promise<Assertions> {
+        return await this.callApi('assertions/extract', {
             test_name: testName,
             story: instruction,
             html: html,
         }) as Assertions;
-
-        if (assertion === null) {
-            return [];
-        }
-
-        return assertion['assertions'];
     }
 
     async extractLookup(
         testName: string,
         instruction: string,
         html: string
-    ): Promise<Lookup | null> {
-        const lookup = await this.callApi('lookup/extract', {
+    ): Promise<Lookup> {
+        return await this.callApi('lookup/extract', {
             test_name: testName,
             story: instruction,
             html: html,
         }) as Lookup;
+    }
 
-        return lookup;
+    async uploadRecording(testName: string, recording: any[], startedAt: Date, actionIds: string[], assertionIds: string[], lookupIds: string[]): Promise<boolean> {
+        const recordingBuffer = Buffer.from(JSON.stringify(recording));
+        const recordingBufferGzipped = zlib.gzipSync(recordingBuffer);
+
+        return await this.callApi('test/recording', {
+            'test_name': testName,
+            'actions': actionIds,
+            'assertions': assertionIds,
+            'lookups': lookupIds,
+            'started_at': startedAt.toISOString(),
+            'packed': recordingBufferGzipped.toString('base64'),
+        }) as boolean;
     }
 }

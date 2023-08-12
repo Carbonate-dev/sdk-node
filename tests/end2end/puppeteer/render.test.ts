@@ -3,6 +3,9 @@ import SDK from "../../../src/SDK";
 import Api from "../../../src/api/api"
 import Puppeteer from "../../../src/browser/puppeteer"
 import {TestLogger} from "../../../src/logger";
+import 'node-fetch';
+
+jest.mock('node-fetch', () => jest.fn());
 jest.mock("../../../src/api/api");
 
 describe("RenderTest", () => {
@@ -17,9 +20,12 @@ describe("RenderTest", () => {
     });
 
     test("It should wait for renders to finish before performing actions", async () => {
-        api.extractActions = jest.fn().mockResolvedValue([
-            { action: "type", xpath: '//label[@for="input"]', text: 'teststr' },
-        ]);
+        api.extractActions = jest.fn().mockResolvedValue({
+            actions: [
+                { action: "type", xpath: '//label[@for="input"]', text: 'teststr' }
+            ],
+            version: 'test1',
+        });
         await sdk.load("file:///" + __dirname + "/../../fixtures/render.html");
 
         await sdk.action('type "teststr" into the input')
@@ -36,9 +42,12 @@ describe("RenderTest", () => {
     });
 
     test("It should wait for renders to finish before performing assertions", async () => {
-        api.extractAssertions = jest.fn().mockResolvedValue([
-            { assertion: "carbonate_assert(document.querySelector('label').innerText == 'Test');" },
-        ]);
+        api.extractAssertions = jest.fn().mockResolvedValue({
+            assertions: [
+                { assertion: "carbonate_assert(document.querySelector('label').innerText == 'Test');" },
+            ],
+            version: 'test1',
+        });
 
         await sdk.load("file:///" + __dirname + "/../../fixtures/render.html");
 
