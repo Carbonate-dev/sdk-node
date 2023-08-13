@@ -233,7 +233,7 @@ export default class SDK {
 
     async action(instruction: string): Promise<void> {
         this.logger.info("Querying action", {test_name: this.getTestName(), instruction: instruction});
-        await this.browser.record('carbonate-instruction', {'instruction': instruction, 'type': 'action'});
+        await this.record('carbonate-instruction', {'instruction': instruction, 'type': 'action'});
 
         let actions = this.cachedActions(instruction);
 
@@ -272,7 +272,7 @@ export default class SDK {
                 return previousActions;
             }
 
-            await this.browser.record('carbonate-action', action);
+            await this.record('carbonate-action', action);
             await this.browser.performAction(action, elements);
             previousActions.push(action);
         }
@@ -282,7 +282,7 @@ export default class SDK {
 
     async assertion(instruction: string): Promise<boolean> {
         this.logger.info("Querying assertion", {test_name: this.getTestName(), instruction: instruction});
-        await this.browser.record('carbonate-instruction', {'instruction': instruction, 'type': 'assertion'});
+        await this.record('carbonate-instruction', {'instruction': instruction, 'type': 'assertion'});
 
         let assertions = this.cachedAssertions(instruction);
 
@@ -320,7 +320,7 @@ export default class SDK {
 
     async performAssertion(assertion: Assertion): Promise<boolean> {
         this.logger.notice("Performing assertion", {assertion: assertion['assertion']});
-        await this.browser.record('carbonate-assertion', assertion);
+        await this.record('carbonate-assertion', assertion);
 
         return await this.browser.evaluateScript('window.carbonate_reset_assertion_result(); (function() { ' + assertion['assertion'] + ' })(); window.carbonate_assertion_result;');
     }
@@ -417,7 +417,7 @@ export default class SDK {
         this.logger.info("Loading page", {url, whitelist: this.networkWhitelist, record: this.recordTests});
 
         await this.browser.load(url, this.networkWhitelist, this.recordTests !== false);
-        await this.browser.record('carbonate-load', {'url': url});
+        await this.record('carbonate-load', {'url': url});
     }
 
     async close(): Promise<void> {
@@ -434,7 +434,7 @@ export default class SDK {
 
         if (errors !== undefined) {
             await Promise.all(
-                errors.map(error => this.browser.record('carbonate-error', {
+                errors.map(error => this.record('carbonate-error', {
                     'message': error.message,
                     'trace': error.stack,
                 }))
