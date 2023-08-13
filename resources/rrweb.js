@@ -9011,7 +9011,7 @@ var rrwebConsoleRecord = (function (exports) {
 window.carbonate_rrweb_recording = [];
 window.carbonate_rrweb = rrweb;
 
-rrweb.record({
+window.carbonate_rrweb_start = () => rrweb.record({
   emit(event) {
     window.carbonate_rrweb_recording.push(event);
   },

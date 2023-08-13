@@ -21,12 +21,15 @@ export default class Puppeteer implements Browser {
         return await this.browser.evaluate(() => document.documentElement.innerHTML);
     }
 
-    async load(url: string, whitelist: string[]): Promise<void> {
+    async load(url: string, whitelist: string[], record: boolean): Promise<void> {
         if (await this.evaluateScript('typeof window.carbonate_dom_updating === "undefined"')) {
             await this.browser.evaluateOnNewDocument(this.injectJs);
         }
 
         await this.browser.goto(url);
+        if (record) {
+            await this.evaluateScript('window.carbonate_rrweb_start()')
+        }
         await this.evaluateScript('window.carbonate_set_xhr_whitelist(' + JSON.stringify(whitelist) + ')');
     }
 
@@ -111,8 +114,9 @@ export default class Puppeteer implements Browser {
 
     async record(name: string,  data: any = {}): Promise<void> {
         await this.browser.evaluate(
-            "(name, data) => window.carbonate_rrweb.record.addCustomEvent(name, data)",
-            [name, data]
+            // @ts-ignore
+            (name, data) => window.carbonate_rrweb.record.addCustomEvent(name, data),
+            name, data
         );
     }
 }

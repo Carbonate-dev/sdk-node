@@ -3,7 +3,7 @@ import {Action} from "../SDK";
 export interface Browser {
     getHtml(): Promise<string>;
 
-    load(url: string, whitelist: string[]): Promise<void>;
+    load(url: string, whitelist: string[], record: boolean): Promise<void>;
 
     close(): Promise<void>;
 

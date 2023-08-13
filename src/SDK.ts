@@ -414,8 +414,9 @@ export default class SDK {
     }
 
     async load(url: string): Promise<void> {
-        this.logger.info("Loading page", {url, whitelist: this.networkWhitelist});
-        await this.browser.load(url, this.networkWhitelist);
+        this.logger.info("Loading page", {url, whitelist: this.networkWhitelist, record: this.recordTests});
+
+        await this.browser.load(url, this.networkWhitelist, this.recordTests !== false);
         await this.browser.record('carbonate-load', {'url': url});
     }
 
