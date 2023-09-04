@@ -1,14 +1,14 @@
-import {Browser} from './browser/browser';
-import Api from './api/api';
-import {BrowserException, FailedExtractionException, InvalidXpathException} from './exceptions/exceptions';
-import slugify from './slugify';
-import {TestLogger} from './logger/test_logger';
+import {Browser} from './browser/browser.js';
+import Api from './api/api.js';
+import {BrowserException, FailedExtractionException, InvalidXpathException} from './exceptions/exceptions.js';
+import slugify from './slugify.js';
+import {TestLogger} from './logger/test_logger.js';
 import * as fs from "fs";
-import Logger from "./logger/logger";
-import {NullLogger} from "./logger/null_logger";
+import Logger from "./logger/logger.js";
+import {NullLogger} from "./logger/null_logger.js";
 import {Circus} from "@jest/types";
-import isWritableStream from "./isWriteStream";
-import {ActionType} from "./actionType";
+import isWritableStream from "./isWriteStream.js";
+import {ActionType} from "./actionType.js";
 import WritableStream = NodeJS.WritableStream;
 
 export interface Action {
@@ -288,7 +288,7 @@ export default class SDK {
 
         const isAssertionReady = async (assertion: Assertion): Promise<boolean> => {
             try {
-                await this.performAssertion(assertion);
+                await this.runAssertion(assertion);
                 return true;
             } catch (e) {
                 return false;
@@ -322,6 +322,10 @@ export default class SDK {
         this.logger.notice("Performing assertion", {assertion: assertion['assertion']});
         await this.record('carbonate-assertion', assertion);
 
+        return await this.runAssertion(assertion);
+    }
+
+    async runAssertion(assertion: Assertion): Promise<boolean> {
         return await this.browser.evaluateScript('window.carbonate_reset_assertion_result(); (function() { ' + assertion['assertion'] + ' })(); window.carbonate_assertion_result;');
     }
 
