@@ -1,4 +1,4 @@
-import {Browser} from './browser/browser';
+import Browser from './browser/browser';
 import Api from './api/api';
 import {BrowserException, FailedExtractionException, InvalidXpathException} from './exceptions/exceptions';
 import slugify from './slugify';

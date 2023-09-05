@@ -1,6 +1,6 @@
 import {Action} from "../SDK";
 
-export interface Browser {
+export default interface Browser {
     getHtml(): Promise<string>;
 
     load(url: string, whitelist: string[], record: boolean): Promise<void>;

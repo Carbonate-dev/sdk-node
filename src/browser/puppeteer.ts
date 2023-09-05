@@ -1,6 +1,6 @@
 // import {By, WebDriver as SeleniumWebDriver, WebElement} from 'selenium-webdriver';
 import {ActionType} from '../actionType';
-import {Browser} from './browser';
+import Browser from './browser';
 import {BrowserException, FailedExtractionException} from '../exceptions/exceptions';
 import {ElementHandle, KeyInput, Page} from 'puppeteer';
 import {Action} from "../SDK";
