@@ -1,7 +1,6 @@
-import * as fs from "fs";
 import Logger from "./logger";
 
-export class NullLogger implements Logger {
+export default class NullLogger implements Logger {
     emergency(message: string, context: Record<string, any> = {}): void {
     }
 
