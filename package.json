@@ -4,6 +4,7 @@
   "description": "Carbonate turns simple language driven instructions into end-to-end tests",
   "main": "dist/SDK.js",
   "types": "dist/SDK.d.ts",
+  "files": ["dist/**"],
   "scripts": {
     "test": "jest -i --verbose",
     "prepublish": "tsc",

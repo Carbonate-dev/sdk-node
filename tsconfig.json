@@ -11,6 +11,7 @@
     "declaration": true,
     "outDir": "dist",
     "strict": true,
+    "allowSyntheticDefaultImports": false,
     "esModuleInterop": true,
     "lib": [
       "es2022",
