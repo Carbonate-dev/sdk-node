@@ -4,4 +4,4 @@ import * as exceptions from './exceptions/exceptions';
 import * as jest from './jest';
 import * as logger from './logger';
 
-export { SDK, browser, exceptions, jest, logger };
+export { SDK as default, SDK, browser, exceptions, jest, logger };
