@@ -1,14 +1,14 @@
-import {Browser} from './browser/browser.js';
-import Api from './api/api.js';
-import {BrowserException, FailedExtractionException, InvalidXpathException} from './exceptions/exceptions.js';
-import slugify from './slugify.js';
-import {TestLogger} from './logger/test_logger.js';
+import {Browser} from './browser/browser';
+import Api from './api/api';
+import {BrowserException, FailedExtractionException, InvalidXpathException} from './exceptions/exceptions';
+import slugify from './slugify';
+import {TestLogger} from './logger/test_logger';
 import * as fs from "fs";
-import Logger from "./logger/logger.js";
-import {NullLogger} from "./logger/null_logger.js";
+import Logger from "./logger/logger";
+import {NullLogger} from "./logger/null_logger";
 import {Circus} from "@jest/types";
-import isWritableStream from "./isWriteStream.js";
-import {ActionType} from "./actionType.js";
+import isWritableStream from "./isWriteStream";
+import {ActionType} from "./actionType";
 import WritableStream = NodeJS.WritableStream;
 
 export interface Action {
