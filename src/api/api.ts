@@ -1,7 +1,7 @@
 import {ApiException} from "../exceptions/exceptions";
 import {Actions, Assertions, Lookup} from "../SDK";
 import fetch from "node-fetch";
-import zlib from "zlib";
+import * as zlib from "zlib";
 
 export default class Api {
     private apiUrl: string;
