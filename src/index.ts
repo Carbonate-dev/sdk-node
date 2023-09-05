@@ -1,7 +1,5 @@
-import {default as SDK} from './SDK';
-import * as browser from './browser';
-import * as exceptions from './exceptions/exceptions';
-import * as jest from './jest';
-import * as logger from './logger';
-
-export { SDK as default, SDK, browser, exceptions, jest, logger };
+export {default} from './SDK';
+export * from './browser';
+export * from './exceptions/exceptions';
+export * from './jest';
+export * from './logger';
