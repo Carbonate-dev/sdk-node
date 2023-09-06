@@ -1,5 +1,5 @@
 import {EnvironmentContext, JestEnvironment, JestEnvironmentConfig} from "@jest/environment";
-import { default as SDK } from "../../src";
+import { SDK } from "../../src";
 import type { Circus } from '@jest/types';
 import { TestException} from "../exceptions/exceptions";
 

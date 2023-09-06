@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } from "@jest/globals";
-import { default as SDK, Api, Puppeteer } from "../../../src";
+import { SDK, Api, Puppeteer } from "../../../src";
 import 'node-fetch';
 
 jest.mock('node-fetch', () => jest.fn());

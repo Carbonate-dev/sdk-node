@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeAll, afterAll, beforeEach, afterEach } from "@jest/globals";
-import { default as SDK, Api, Puppeteer, TestLogger } from "../../../src";
+import { SDK, Api, Puppeteer, TestLogger } from "../../../src";
 import * as path from "path";
 import 'node-fetch';
 

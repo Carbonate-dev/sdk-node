@@ -1,5 +1,5 @@
 import { describe, expect, test } from "@jest/globals";
-import {default as SDK, Puppeteer} from "../../src";
+import {SDK, Puppeteer} from "../../src";
 
 let browser = new Puppeteer(page);
 let sdk = new SDK(browser, null);
