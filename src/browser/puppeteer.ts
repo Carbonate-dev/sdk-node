@@ -18,7 +18,7 @@ export default class Puppeteer implements Browser {
     }
 
     async getHtml(): Promise<string> {
-        return await this.browser.evaluate(() => document.documentElement.innerHTML);
+        return await this.evaluateScript('window.carbonate_getOuterHTML(document.body)');
     }
 
     async load(url: string, whitelist: string[], record: boolean): Promise<void> {
