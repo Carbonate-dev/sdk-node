@@ -5,11 +5,11 @@
     const activeXhr = [];
 
     function log(message) {
-        console.log('[' + new Date().toISOString().slice(11) + '] ' + message);
+        console.log(new Date().toISOString().slice(11) + ' - ' + message);
     }
 
     function warn(message) {
-        console.warn('[' + new Date().toISOString().slice(11) + '] ' + message);
+        console.warn(new Date().toISOString().slice(11) + ' - ' + message);
     }
 
     function debounce(func, delay) {
@@ -264,6 +264,10 @@
         'noscript',
     ]);
 
+    let interactableElements = makeSet([
+        'option',
+    ]);
+
     const tagBlacklist = {
         '!doctype': true,
         '!--': true,
@@ -417,13 +421,13 @@
      * @param {Function=} callback
      */
     window.carbonate_getOuterHTML = function(node, parentNode, callback) {
-        if (node.offsetWidth === 0 && node.offsetHeight === 0) {
-            return '';
-        }
-
         switch (node.nodeType) {
             case Node.ELEMENT_NODE: {
                 let tagName = node.localName;
+
+                if (!interactableElements[tagName] && node.offsetWidth === 0 && node.offsetHeight === 0) {
+                    return '';
+                }
 
                 if (tagBlacklist[tagName] === true) {
                     console.debug('Skipping tag', tagName);
@@ -490,7 +494,6 @@
         }
         return shadowRoot ? `<template shadowroot="${shadowRoot.mode}">${s}</template>` : s;
     }
-    window.carbonate_getOuterHTML(window.document.body);
 
     // END OF SHADYDOM CODE
 
