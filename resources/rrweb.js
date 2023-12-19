@@ -9028,6 +9028,9 @@ window.carbonate_rrweb_start = () => rrweb.record({
     headMetaAuthorship: true,
     headMetaVerification: true,
   },
+  recordAfter: 'DOMContentLoaded',
+  inlineStylesheet: true,
+  recordCanvas: true,
   inlineImages: true,
   collectFonts: true,
 });
