@@ -92,7 +92,7 @@
     let urlWhitelist = [];
 
     // Allow XHR/Fetch whitelisting
-    window.carbonate_set_xhr_whitelist = (whitelist) => {
+    window.carbonate_setXhrWhitelist = function carbonate_setXhrWhitelist(whitelist) {
         urlWhitelist = whitelist.map(url => new RegExp(globToRegex(url)));
 
         for (let url of urlWhitelist) {
@@ -107,11 +107,11 @@
         }
     }
 
-    window.carbonate_reset_assertion_result = () => {
+    window.carbonate_resetAssertionResult = function carbonate_resetAssertionResult() {
         window.carbonate_assertion_result = true;
     }
 
-    window.carbonate_assert = (assertion) => {
+    window.carbonate_assert = function carbonate_assert(assertion) {
         if (assertion === false) {
             window.carbonate_assertion_result = false;
         }
@@ -178,15 +178,13 @@
 
     // Let Carbonate query for hidden elements
 
-    window.carbonate_getAllHiddenElements = function (el) {
+    window.carbonate_getAllHiddenElements = function carbonate_getAllHiddenElements(el) {
         if (el.offsetWidth === 0 && el.offsetHeight === 0) {
             return [el];
         }
 
         let children = Array.from(el.children);
-        let hiddenChildren = children.map(window.carbonate_getAllHiddenElements).flat();
-
-        return hiddenChildren;
+        return children.map(window.carbonate_getAllHiddenElements).flat();
     }
 
     /**
@@ -420,7 +418,7 @@
      * @param {Node} parentNode
      * @param {Function=} callback
      */
-    window.carbonate_getOuterHTML = function(node, parentNode, callback) {
+    window.carbonate_getOuterHTML = function carbonate_getOuterHTML(node, parentNode, callback) {
         switch (node.nodeType) {
             case Node.ELEMENT_NODE: {
                 let tagName = node.localName;
@@ -477,7 +475,7 @@
      * @param {Node} node
      * @param {Function=} callback
      */
-    window.carbonate_getInnerHTML = function(node, callback) {
+    window.carbonate_getInnerHTML = function carbonate_getInnerHTML(node, callback) {
         let shadowRoot = node.shadowRoot;
 
         if (shadowRoot) {
@@ -498,7 +496,7 @@
     // END OF SHADYDOM CODE
 
     // Based off: https://stackoverflow.com/a/46781845/6662
-    function getXPathForElement(element) {
+    window.carbonate_getXPathForElement = function carbonate_getXPathForElement(element) {
         if (!element) return null
 
         if (element.tagName === 'BODY') {
@@ -508,14 +506,14 @@
                 .filter(e => e.nodeName === element.nodeName)
             const idx = sameTagSiblings.indexOf(element)
 
-            return getXPathForElement(element.parentNode) +
+            return carbonate_getXPathForElement(element.parentNode) +
                 '/' +
                 element.tagName.toLowerCase() +
                 (sameTagSiblings.length > 1 ? `[${idx + 1}]` : '')
         }
     }
 
-    window.carbonate_getElementByXpath = function(path) {
+    window.carbonate_getElementByXpath = function carbonate_getElementByXpath(path) {
         return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
     }
 
