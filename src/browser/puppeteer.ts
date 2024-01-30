@@ -30,7 +30,7 @@ export default class Puppeteer implements Browser {
         if (record) {
             await this.evaluateScript('window.carbonate_rrweb_start()')
         }
-        await this.evaluateScript('window.carbonate_set_xhr_whitelist(' + JSON.stringify(whitelist) + ')');
+        await this.evaluateScript('window.carbonate_setXhrWhitelist(' + JSON.stringify(whitelist) + ')');
     }
 
     async close(): Promise<void> {
@@ -101,7 +101,7 @@ export default class Puppeteer implements Browser {
             }
 
             await elements[0].type(action.text);
-            this.evaluateScript('!!document.activeElement ? document.activeElement.blur() : 0');
+            await this.evaluateScript('!!document.activeElement ? document.activeElement.blur() : 0');
 
         } else if (action.action === ActionType.KEY) {
             if (!action.key) {
