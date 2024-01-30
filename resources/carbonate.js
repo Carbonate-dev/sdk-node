@@ -502,7 +502,7 @@
         if (element.tagName === 'BODY') {
             return '/html/body'
         } else {
-            const sameTagSiblings = Array.from(element.parentNode.childNodes)
+            const sameTagSiblings = (element.parentNode ? Array.from(element.parentNode.childNodes) : [])
                 .filter(e => e.nodeName === element.nodeName)
             const idx = sameTagSiblings.indexOf(element)
 
