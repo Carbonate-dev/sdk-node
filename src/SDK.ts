@@ -326,7 +326,7 @@ export default class SDK {
     }
 
     async runAssertion(assertion: Assertion): Promise<boolean> {
-        return await this.browser.evaluateScript('window.carbonate_reset_assertion_result(); (function() { ' + assertion['assertion'] + ' })(); window.carbonate_assertion_result;');
+        return await this.browser.evaluateScript('window.carbonate_resetAssertionResult(); (function() { ' + assertion['assertion'] + ' })(); window.carbonate_assertion_result;');
     }
 
     cachedLookup(instruction: string): Lookup | null {
