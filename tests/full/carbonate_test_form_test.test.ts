@@ -24,9 +24,9 @@ describe("CarbonateTestFormTest", () => {
             'https://carbonate.dev/demo-form.html'
         );
 
-        const dropdown = await sdk.lookup('The dropdown')
+        const dropdown = await sdk.lookup('The event type dropdown')
 
-        await dropdown.select('Birthday')
+        await dropdown[0].select('Birthday')
 
         expect(
             await (await dropdown.getProperty('value')).jsonValue()

@@ -371,7 +371,7 @@ export default class SDK {
             throw new InvalidXpathException("Could not find element for xpath: " + lookup.xpath);
         }
 
-        return elements[0];
+        return elements;
     }
 
     startTest(testPrefix: string, testName: string): void {
