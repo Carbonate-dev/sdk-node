@@ -69,6 +69,27 @@ export default class Puppeteer implements Browser {
             else {
                 await elements[0].click();
             }
+        } else if (action.action === ActionType.HOVER) {
+            await elements[0].hover();
+        } else if (action.action === ActionType.SCROLL) {
+            await this.browser.evaluate((el) => el.scrollIntoView(), elements[0]);
+        } else if (action.action === ActionType.VALUE) {
+            if (!action.text) {
+                throw new FailedExtractionException('No value provided for value action');
+            }
+
+            let tagName = (await (
+                await elements[0].getProperty('tagName')
+            ).jsonValue()).toLowerCase();
+
+            if (tagName === 'select') {
+                await elements[0].select(action.text);
+            }
+
+            await this.browser.evaluate((el, value) => {
+                el.value = value;
+                el.dispatchEvent(new Event('change'));
+            }, elements[0], action.text);
         } else if (action.action === ActionType.TYPE) {
             if (!action.text) {
                 throw new FailedExtractionException('No text provided for type action');
@@ -109,6 +130,13 @@ export default class Puppeteer implements Browser {
             }
 
             await elements[0].press(action.key as KeyInput);
+        }
+        else if (action.action === ActionType.JAVASCRIPT) {
+            if (!action.text) {
+                throw new FailedExtractionException('No JavaScript provided for JavaScript action');
+            }
+
+            await this.evaluateScript(action.text);
         }
     }
 
