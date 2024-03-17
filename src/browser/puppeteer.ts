@@ -85,11 +85,13 @@ export default class Puppeteer implements Browser {
             if (tagName === 'select') {
                 await elements[0].select(action.text);
             }
-
-            await this.browser.evaluate((el, value) => {
-                el.value = value;
-                el.dispatchEvent(new Event('change'));
-            }, elements[0], action.text);
+            else {
+                await this.browser.evaluate((el, value) => {
+                    // @ts-expect-error
+                    el.value = value;
+                    el.dispatchEvent(new Event('change'));
+                }, elements[0], action.text);
+            }
         } else if (action.action === ActionType.TYPE) {
             if (!action.text) {
                 throw new FailedExtractionException('No text provided for type action');
