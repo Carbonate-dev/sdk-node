@@ -15,7 +15,6 @@ export interface Action {
     action: ActionType;
     xpath: string;
     text?: string;
-    key?: string;
 }
 
 export interface Actions {
@@ -273,7 +272,7 @@ export default class SDK {
             }
 
             await this.record('carbonate-action', action);
-            await this.browser.performAction(action, elements);
+            await this.browser.performAction(action.action, elements, action.text);
             previousActions.push(action);
         }
 

@@ -53,8 +53,8 @@ export default class Puppeteer implements Browser {
         }
     }
 
-    async performAction(action: Action, elements: ElementHandle<Element>[]): Promise<void> {
-        if (action.action === ActionType.CLICK) {
+    async performAction(type: ActionType, elements: ElementHandle<Element>[], value?: string): Promise<void> {
+        if (type === ActionType.CLICK) {
             let tagName = (await (
                 await elements[0].getProperty('tagName')
             ).jsonValue()).toLowerCase();
@@ -69,12 +69,12 @@ export default class Puppeteer implements Browser {
             else {
                 await elements[0].click();
             }
-        } else if (action.action === ActionType.HOVER) {
+        } else if (type === ActionType.HOVER) {
             await elements[0].hover();
-        } else if (action.action === ActionType.SCROLL) {
+        } else if (type === ActionType.SCROLL) {
             await this.browser.evaluate((el) => el.scrollIntoView(), elements[0]);
-        } else if (action.action === ActionType.VALUE) {
-            if (!action.text) {
+        } else if (type === ActionType.VALUE) {
+            if (!value) {
                 throw new FailedExtractionException('No value provided for value action');
             }
 
@@ -83,17 +83,17 @@ export default class Puppeteer implements Browser {
             ).jsonValue()).toLowerCase();
 
             if (tagName === 'select') {
-                await elements[0].select(action.text);
+                await elements[0].select(value);
             }
             else {
                 await this.browser.evaluate((el, value) => {
                     // @ts-expect-error
                     el.value = value;
                     el.dispatchEvent(new Event('change'));
-                }, elements[0], action.text);
+                }, elements[0], value);
             }
-        } else if (action.action === ActionType.TYPE) {
-            if (!action.text) {
+        } else if (type === ActionType.TYPE) {
+            if (!value) {
                 throw new FailedExtractionException('No text provided for type action');
             }
 
@@ -108,7 +108,7 @@ export default class Puppeteer implements Browser {
                 await this.browser.evaluate((el, text) => {
                     (<HTMLInputElement>el).value = text;
                     el.dispatchEvent(new Event('change'));
-                }, elements[0], action.text);
+                }, elements[0], value);
 
                 return;
             }
@@ -123,22 +123,22 @@ export default class Puppeteer implements Browser {
                 elements = await this.findById(id);
             }
 
-            await elements[0].type(action.text);
+            await elements[0].type(value);
             await this.evaluateScript('!!document.activeElement ? document.activeElement.blur() : 0');
 
-        } else if (action.action === ActionType.KEY) {
-            if (!action.key) {
+        } else if (type === ActionType.KEY) {
+            if (!value) {
                 throw new FailedExtractionException('No key provided for key action');
             }
 
-            await elements[0].press(action.key as KeyInput);
+            await elements[0].press(value as KeyInput);
         }
-        else if (action.action === ActionType.JAVASCRIPT) {
-            if (!action.text) {
+        else if (type === ActionType.JAVASCRIPT) {
+            if (!value) {
                 throw new FailedExtractionException('No JavaScript provided for JavaScript action');
             }
 
-            await this.evaluateScript(action.text);
+            await this.evaluateScript(value);
         }
     }
 
