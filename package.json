@@ -7,6 +7,7 @@
   "scripts": {
     "test": "jest -i --verbose",
     "prepublish": "tsc",
+    "prepare": "tsc",
     "build": "tsc"
   },
   "author": "Carbonate Software Ltd.",
